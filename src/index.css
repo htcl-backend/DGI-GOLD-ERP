@@ -1,0 +1,54 @@
+@import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
+
+@import "tailwindcss";
+
+* {
+  font-family: "Lato", sans-serif;
+}
+.sidebar-shadow {
+  box-shadow: 0px 8px 17px #171a1f3b, 0px 0px 2px #171a1f33; /* shadow-l */
+}
+
+.header-shadow {
+  box-shadow: 0px 0px 1px #171a1f26, 0px 0px 2px #171a1f33;
+}
+
+.card-shadow {
+  box-shadow: 0px 8px 17px #171a1f3b, 0px 0px 2px #171a1f33;
+}
+
+/* Custom gradient backgrounds and text styles */
+.amber-bg {
+  background: linear-gradient(to bottom right, #fffbeb, #fffbeb, #fef3c7);
+}
+
+.gold-button {
+  background: linear-gradient(to right, #b45309, #fbbf24, #92400e);
+}
+
+.gold-heading {
+  background: linear-gradient(to right, #d97706, #f59e0b, #b45309);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.silver-button {
+  background: linear-gradient(to right, #374151, #e5e7eb, #4b5563);
+  color: #111827;
+}
+
+.silver-heading {
+  background: linear-gradient(to right, #374151, rgba(156, 163, 175, 0.8), #111827);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark-brown-bg {
+  background: linear-gradient(to bottom right, #1a1508, #2d2210, #141414);
+}
+
+.yellow-text {
+  color: #92400e; /* similar to yellow-900 */
+}
