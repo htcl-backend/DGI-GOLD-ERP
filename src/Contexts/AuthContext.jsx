@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import apiService from '../screens/service/apiService';
 
+
 const AuthContext = createContext();
 
 // Dummy user profiles for offline development
