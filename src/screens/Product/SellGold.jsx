@@ -27,9 +27,67 @@ const SellGold = () => {
 
   const fetchSellRecords = async () => {
     try {
-      const response = await fetch('/api/transactions/gold/sell');
-      const data = await response.json();
-      setSellRecords(data);
+      // Static mock data for sell records
+      const mockSellRecords = [
+        {
+          _id: "sell001",
+          material: "gold",
+          customerName: "Rajesh Kumar",
+          customerPhone: "+91-9876543210",
+          weight: 25.5,
+          purity: "24K",
+          sellPrice: 6500,
+          totalAmount: 165750,
+          date: "2024-01-15",
+          delivered: true,
+          notes: "High purity gold sale",
+          type: "sell"
+        },
+        {
+          _id: "sell002",
+          material: "gold",
+          customerName: "Priya Sharma",
+          customerPhone: "+91-9876543211",
+          weight: 15.2,
+          purity: "22K",
+          sellPrice: 5800,
+          totalAmount: 88160,
+          date: "2024-01-12",
+          delivered: true,
+          notes: "Wedding jewelry purchase",
+          type: "sell"
+        },
+        {
+          _id: "sell003",
+          material: "gold",
+          customerName: "Amit Singh",
+          customerPhone: "+91-9876543212",
+          weight: 30.0,
+          purity: "18K",
+          sellPrice: 4500,
+          totalAmount: 135000,
+          date: "2024-01-10",
+          delivered: false,
+          notes: "Bulk gold purchase",
+          type: "sell"
+        },
+        {
+          _id: "sell004",
+          material: "gold",
+          customerName: "Sneha Patel",
+          customerPhone: "+91-9876543213",
+          weight: 10.8,
+          purity: "24K",
+          sellPrice: 6800,
+          totalAmount: 73440,
+          date: "2024-01-08",
+          delivered: true,
+          notes: "Investment purchase",
+          type: "sell"
+        }
+      ];
+
+      setSellRecords(mockSellRecords);
     } catch (error) {
       console.error('Error fetching sell records:', error);
     } finally {
@@ -40,28 +98,27 @@ const SellGold = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/transactions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...formData, type: 'sell' }),
+      // Simulate adding new sell record with static data
+      const newRecord = {
+        _id: Date.now().toString(),
+        ...formData,
+        type: 'sell'
+      };
+
+      setSellRecords(prev => [...prev, newRecord]);
+
+      setFormData({
+        material: "gold",
+        customerName: "",
+        customerPhone: "",
+        weight: "",
+        purity: "24K",
+        sellPrice: "",
+        totalAmount: "",
+        date: new Date().toISOString().split("T")[0],
+        delivered: false,
+        notes: "",
       });
-      if (response.ok) {
-        fetchSellRecords();
-        setFormData({
-          material: "gold",
-          customerName: "",
-          customerPhone: "",
-          weight: "",
-          purity: "24K",
-          sellPrice: "",
-          totalAmount: "",
-          date: new Date().toISOString().split("T")[0],
-          delivered: false,
-          notes: "",
-        });
-      }
     } catch (error) {
       console.error('Error creating transaction:', error);
     }
@@ -70,29 +127,26 @@ const SellGold = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`/api/transactions/${editingRecord._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      // Update local state instead of API call
+      setSellRecords(prev => prev.map(record =>
+        record._id === editingRecord._id
+          ? { ...record, ...formData }
+          : record
+      ));
+
+      setEditingRecord(null);
+      setFormData({
+        material: "gold",
+        customerName: "",
+        customerPhone: "",
+        weight: "",
+        purity: "24K",
+        sellPrice: "",
+        totalAmount: "",
+        date: new Date().toISOString().split("T")[0],
+        delivered: false,
+        notes: "",
       });
-      if (response.ok) {
-        fetchSellRecords();
-        setEditingRecord(null);
-        setFormData({
-          material: "gold",
-          customerName: "",
-          customerPhone: "",
-          weight: "",
-          purity: "24K",
-          sellPrice: "",
-          totalAmount: "",
-          date: new Date().toISOString().split("T")[0],
-          delivered: false,
-          notes: "",
-        });
-      }
     } catch (error) {
       console.error('Error updating transaction:', error);
     }
@@ -100,12 +154,8 @@ const SellGold = () => {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`/api/transactions/${id}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        fetchSellRecords();
-      }
+      // Update local state instead of API call
+      setSellRecords(prev => prev.filter(record => record._id !== id));
     } catch (error) {
       console.error('Error deleting transaction:', error);
     }

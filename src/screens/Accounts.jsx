@@ -19,21 +19,86 @@ const Accounts = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            let endpoint = "";
+            let mockData = [];
             if (activeTab === "invoices") {
-                endpoint = "/invoices";
+                mockData = [
+                    {
+                        id: "INV-001",
+                        customer: "Rajesh Kumar",
+                        amount: 245000,
+                        date: "2024-01-15",
+                        status: "Paid",
+                        dueDate: "2024-01-20"
+                    },
+                    {
+                        id: "INV-002",
+                        customer: "Priya Sharma",
+                        amount: 189000,
+                        date: "2024-01-10",
+                        status: "Paid",
+                        dueDate: "2024-01-15"
+                    },
+                    {
+                        id: "INV-003",
+                        customer: "Amit Singh",
+                        amount: 135000,
+                        date: "2024-01-08",
+                        status: "Pending",
+                        dueDate: "2024-01-13"
+                    }
+                ];
             } else if (activeTab === "payments") {
-                endpoint = "/payments";
+                mockData = [
+                    {
+                        id: "PAY-001",
+                        customer: "Rajesh Kumar",
+                        amount: 245000,
+                        date: "2024-01-15",
+                        method: "Cash",
+                        reference: "TXN-12345"
+                    },
+                    {
+                        id: "PAY-002",
+                        customer: "Priya Sharma",
+                        amount: 189000,
+                        date: "2024-01-10",
+                        method: "Bank Transfer",
+                        reference: "TXN-12346"
+                    },
+                    {
+                        id: "PAY-003",
+                        customer: "Amit Singh",
+                        amount: 135000,
+                        date: "2024-01-08",
+                        method: "Cheque",
+                        reference: "TXN-12347"
+                    }
+                ];
             } else if (activeTab === "gst") {
-                endpoint = "/gst";
+                mockData = [
+                    {
+                        id: "GST-001",
+                        period: "Jan 2024",
+                        sales: 1250000,
+                        purchases: 980000,
+                        gstCollected: 22500,
+                        gstPaid: 17640,
+                        netGST: 4860
+                    },
+                    {
+                        id: "GST-002",
+                        period: "Dec 2023",
+                        sales: 1180000,
+                        purchases: 925000,
+                        gstCollected: 21200,
+                        gstPaid: 16650,
+                        netGST: 4550
+                    }
+                ];
             }
 
-            if (endpoint) {
-                const response = await apiFetch(endpoint);
-                const items = response[activeTab] || [];
-                setData(items);
-                setFilteredData(items);
-            }
+            setData(mockData);
+            setFilteredData(mockData);
         } catch (error) {
             console.error(`Error fetching ${activeTab}:`, error);
             setError(`Failed to load ${activeTab} data`);

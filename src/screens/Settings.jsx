@@ -451,6 +451,7 @@ const Settings = () => {
                             onChange={handlePasswordChange}
                             className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                             required
+                            autoComplete="current-password"
                           />
                           <button
                             type="button"
@@ -473,6 +474,7 @@ const Settings = () => {
                           onChange={handlePasswordChange}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                           required
+                          autoComplete="new-password"
                         />
                       </div>
 
@@ -487,6 +489,7 @@ const Settings = () => {
                           onChange={handlePasswordChange}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                           required
+                          autoComplete="new-password"
                         />
                       </div>
 

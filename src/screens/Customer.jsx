@@ -57,14 +57,65 @@ const Customer = () => {
     setSelectedCustomer(customer);
     setActiveTab("details");
 
-    // Fetch customer purchase history
+    // Use static mock data for customer purchase history
     try {
-      const transactionsResponse = await apiFetch(`/transactions?customerId=${customer._id}`);
-      const invoicesResponse = await apiFetch(`/invoices?customerId=${customer._id}`);
+      const mockTransactions = [
+        {
+          _id: "t1",
+          date: "2024-01-15",
+          type: "Purchase",
+          amount: 245000,
+          description: "Gold 24K purchase",
+          status: "Completed"
+        },
+        {
+          _id: "t2",
+          date: "2024-01-10",
+          type: "Purchase",
+          amount: 189000,
+          description: "Gold 22K purchase",
+          status: "Completed"
+        },
+        {
+          _id: "t3",
+          date: "2024-01-05",
+          type: "Purchase",
+          amount: 95000,
+          description: "Silver 999 purchase",
+          status: "Completed"
+        }
+      ];
+
+      const mockInvoices = [
+        {
+          _id: "i1",
+          invoiceNumber: "INV-2024-001",
+          date: "2024-01-15",
+          amount: 245000,
+          status: "Paid",
+          dueDate: "2024-01-20"
+        },
+        {
+          _id: "i2",
+          invoiceNumber: "INV-2024-002",
+          date: "2024-01-10",
+          amount: 189000,
+          status: "Paid",
+          dueDate: "2024-01-15"
+        },
+        {
+          _id: "i3",
+          invoiceNumber: "INV-2024-003",
+          date: "2024-01-05",
+          amount: 95000,
+          status: "Paid",
+          dueDate: "2024-01-10"
+        }
+      ];
 
       setCustomerHistory({
-        transactions: transactionsResponse.transactions || [],
-        invoices: invoicesResponse.invoices || []
+        transactions: mockTransactions,
+        invoices: mockInvoices
       });
     } catch (error) {
       console.error('Error fetching customer history:', error);
@@ -81,9 +132,67 @@ const Customer = () => {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const data = await apiFetch("/customers");
-      setCustomers(data.customers || []);
-      setFilteredCustomers(data.customers || []);
+      // Static mock data for customers
+      const mockCustomers = [
+        {
+          _id: "1",
+          name: "Rajesh Kumar",
+          email: "rajesh.kumar@email.com",
+          phone: "+91-9876543210",
+          address: "123 MG Road",
+          city: "Bangalore",
+          state: "Karnataka",
+          zipCode: "560001",
+          gstin: "29AAAAA0000A1Z5"
+        },
+        {
+          _id: "2",
+          name: "Priya Sharma",
+          email: "priya.sharma@email.com",
+          phone: "+91-9876543211",
+          address: "456 Brigade Road",
+          city: "Bangalore",
+          state: "Karnataka",
+          zipCode: "560025",
+          gstin: "29BBBBB0000B1Z6"
+        },
+        {
+          _id: "3",
+          name: "Amit Singh",
+          email: "amit.singh@email.com",
+          phone: "+91-9876543212",
+          address: "789 Commercial Street",
+          city: "Bangalore",
+          state: "Karnataka",
+          zipCode: "560001",
+          gstin: "29CCCCC0000C1Z7"
+        },
+        {
+          _id: "4",
+          name: "Sneha Patel",
+          email: "sneha.patel@email.com",
+          phone: "+91-9876543213",
+          address: "321 Residency Road",
+          city: "Bangalore",
+          state: "Karnataka",
+          zipCode: "560025",
+          gstin: "29DDDDD0000D1Z8"
+        },
+        {
+          _id: "5",
+          name: "Vikram Rao",
+          email: "vikram.rao@email.com",
+          phone: "+91-9876543214",
+          address: "654 Cunningham Road",
+          city: "Bangalore",
+          state: "Karnataka",
+          zipCode: "560052",
+          gstin: "29EEEEE0000E1Z9"
+        }
+      ];
+
+      setCustomers(mockCustomers);
+      setFilteredCustomers(mockCustomers);
     } catch (err) {
       setErrorMessage("Failed to fetch customers.");
     } finally {
@@ -100,15 +209,14 @@ const Customer = () => {
     setErrorMessage("");
 
     try {
-      const result = await apiFetch("/customers", {
-        method: "POST",
-        body: JSON.stringify(formData),
-      });
+      // Simulate adding customer with static data
+      const newCustomer = {
+        _id: Date.now().toString(), // Simple ID generation
+        ...formData
+      };
 
-      if (result?.customer) {
-        setCustomers((prev) => [...prev, result.customer]);
-        setFilteredCustomers((prev) => [...prev, result.customer]);
-      }
+      setCustomers((prev) => [...prev, newCustomer]);
+      setFilteredCustomers((prev) => [...prev, newCustomer]);
 
       setFormData({
         name: "",
@@ -129,7 +237,7 @@ const Customer = () => {
   const handleDelete = async (id) => {
     setErrorMessage("");
     try {
-      await apiFetch(`/customers/${id}`, { method: "DELETE" });
+      // Update local state instead of API call
       setCustomers((prev) => prev.filter((customer) => customer._id !== id));
       setFilteredCustomers((prev) => prev.filter((customer) => customer._id !== id));
     } catch (err) {

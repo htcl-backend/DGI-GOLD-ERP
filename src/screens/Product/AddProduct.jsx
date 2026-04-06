@@ -20,24 +20,18 @@ const AddProduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      // Simulate adding product with static data
+      console.log('Product added:', formData);
+      alert('Product added successfully!');
+
+      setFormData({
+        material: "gold",
+        name: "",
+        purity: "24K",
+        stock: "",
+        price: "",
+        value: "",
       });
-      if (response.ok) {
-        alert('Product added successfully!');
-        setFormData({
-          material: "gold",
-          name: "",
-          purity: "24K",
-          stock: "",
-          price: "",
-          value: "",
-        });
-      }
     } catch (error) {
       console.error('Error adding product:', error);
     }

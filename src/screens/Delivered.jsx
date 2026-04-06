@@ -13,8 +13,76 @@ const Delivered = () => {
   const fetchDeliveries = async () => {
     setLoading(true);
     try {
-      const data = await apiFetch("/deliveries");
-      setDeliveries(data || []);
+      // Static mock data for deliveries
+      const mockDeliveries = [
+        {
+          id: 1,
+          orderNumber: "ORD-001",
+          customerName: "Rajesh Kumar",
+          customerPhone: "+91-9876543210",
+          goldWeight: 25.5,
+          goldPurity: "24K",
+          totalAmount: 165750,
+          orderDate: "2024-01-15",
+          deliveryDate: "2024-01-18",
+          status: "Delivered",
+          address: "123 MG Road, Bangalore, Karnataka 560001"
+        },
+        {
+          id: 2,
+          orderNumber: "ORD-002",
+          customerName: "Priya Sharma",
+          customerPhone: "+91-9876543211",
+          goldWeight: 15.2,
+          goldPurity: "22K",
+          totalAmount: 88280,
+          orderDate: "2024-01-16",
+          deliveryDate: "2024-01-20",
+          status: "In Transit",
+          address: "456 Brigade Road, Bangalore, Karnataka 560025"
+        },
+        {
+          id: 3,
+          orderNumber: "ORD-003",
+          customerName: "Amit Singh",
+          customerPhone: "+91-9876543212",
+          goldWeight: 30.0,
+          goldPurity: "18K",
+          totalAmount: 135000,
+          orderDate: "2024-01-17",
+          deliveryDate: "2024-01-22",
+          status: "Out for Delivery",
+          address: "789 Commercial Street, Bangalore, Karnataka 560001"
+        },
+        {
+          id: 4,
+          orderNumber: "ORD-004",
+          customerName: "Sneha Patel",
+          customerPhone: "+91-9876543213",
+          goldWeight: 10.8,
+          goldPurity: "24K",
+          totalAmount: 70200,
+          orderDate: "2024-01-18",
+          deliveryDate: "2024-01-25",
+          status: "Pending",
+          address: "321 Residency Road, Bangalore, Karnataka 560025"
+        },
+        {
+          id: 5,
+          orderNumber: "ORD-005",
+          customerName: "Vikram Rao",
+          customerPhone: "+91-9876543214",
+          goldWeight: 45.3,
+          goldPurity: "22K",
+          totalAmount: 263340,
+          orderDate: "2024-01-19",
+          deliveryDate: "2024-01-21",
+          status: "Delivered",
+          address: "654 Cunningham Road, Bangalore, Karnataka 560052"
+        }
+      ];
+
+      setDeliveries(mockDeliveries);
       setError(null);
     } catch (err) {
       setError("Failed to fetch deliveries.");
@@ -38,9 +106,61 @@ const Delivered = () => {
     setSelectedModal(status);
     setModalLoading(true);
     try {
-      // Assuming an endpoint like /api/deliveries/history?status=Delivered
-      const data = await apiFetch(`/deliveries/history?status=${status}`);
-      setModalHistory(data || []);
+      // Static mock data for delivery history based on status
+      const mockHistoryData = {
+        "Delivered": [
+          {
+            date: "2024-01-18",
+            orderId: "ORD-001",
+            customer: "Rajesh Kumar",
+            action: "Delivered successfully",
+            location: "Bangalore, Karnataka"
+          },
+          {
+            date: "2024-01-21",
+            orderId: "ORD-005",
+            customer: "Vikram Rao",
+            action: "Delivered successfully",
+            location: "Bangalore, Karnataka"
+          }
+        ],
+        "In Transit": [
+          {
+            date: "2024-01-19",
+            orderId: "ORD-002",
+            customer: "Priya Sharma",
+            action: "Package picked up from warehouse",
+            location: "Bangalore Warehouse"
+          },
+          {
+            date: "2024-01-20",
+            orderId: "ORD-002",
+            customer: "Priya Sharma",
+            action: "In transit to delivery center",
+            location: "En route to Bangalore"
+          }
+        ],
+        "Out for Delivery": [
+          {
+            date: "2024-01-21",
+            orderId: "ORD-003",
+            customer: "Amit Singh",
+            action: "Out for delivery",
+            location: "Bangalore Delivery Center"
+          }
+        ],
+        "Pending": [
+          {
+            date: "2024-01-18",
+            orderId: "ORD-004",
+            customer: "Sneha Patel",
+            action: "Order confirmed, awaiting processing",
+            location: "Order Processing"
+          }
+        ]
+      };
+
+      setModalHistory(mockHistoryData[status] || []);
     } catch (err) {
       console.error(`Failed to fetch history for ${status}`, err);
       setModalHistory([]); // clear previous history on error
@@ -68,13 +188,16 @@ const Delivered = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      await apiFetch(`/deliveries/${editingDelivery.id}`, {
-        method: "PUT",
-        body: JSON.stringify(editForm),
-      });
+      // Update local state instead of API call
+      setDeliveries(prevDeliveries =>
+        prevDeliveries.map(delivery =>
+          delivery.id === editingDelivery.id
+            ? { ...delivery, ...editForm }
+            : delivery
+        )
+      );
       setEditingDelivery(null);
       setEditForm({});
-      fetchDeliveries(); // Re-fetch to show updated data
       alert("Delivery updated successfully!");
     } catch (err) {
       console.error("Failed to update delivery", err);
@@ -93,8 +216,11 @@ const Delivered = () => {
   const handleDeleteClick = async (deliveryId) => {
     if (window.confirm("Are you sure you want to delete this delivery record?")) {
       try {
-        await apiFetch(`/deliveries/${deliveryId}`, { method: "DELETE" });
-        fetchDeliveries(); // Re-fetch to show updated data
+        // Update local state instead of API call
+        setDeliveries(prevDeliveries =>
+          prevDeliveries.filter(delivery => delivery.id !== deliveryId)
+        );
+        alert("Delivery deleted successfully!");
       } catch (err) {
         console.error("Failed to delete delivery", err);
         alert("Failed to delete delivery.");

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 
@@ -71,11 +71,13 @@ const METALS = {
 };
 
 const fetchMetal = async (symbol) => {
-  const res = await fetch(`https://www.goldapi.io/api/${symbol}/INR`, {
-    headers: { "x-access-token": API_KEY, "Content-Type": "application/json" },
-  });
-  if (!res.ok) throw new Error(`Failed to fetch ${symbol}`);
-  return res.json();
+  // Always return mock data instead of making API calls
+  if (symbol === "XAU") {
+    return simulateTick(MOCK_BASE.XAU, "XAU");
+  } else if (symbol === "XAG") {
+    return simulateTick(MOCK_BASE.XAG, "XAG");
+  }
+  throw new Error(`Unknown symbol: ${symbol}`);
 };
 
 const formatINR = (val) =>
@@ -197,6 +199,7 @@ const GoldPriceDashboard = () => {
   const [loading, setLoading] = useState({ XAU: true, XAG: true });
   const [errors, setErrors] = useState({ XAU: null, XAG: null });
   const [chartData, setChartData] = useState([]);
+  const [selectedMetal, setSelectedMetal] = useState('XAU');
   const [lastUpdated, setLastUpdated] = useState(null);
   const intervalRef = useRef(null);
 
@@ -306,25 +309,71 @@ const GoldPriceDashboard = () => {
 
         {/* Chart */}
         <div className="bg-white rounded-2xl border border-gray-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-gray-700">Price Trend (Live Session)</h3>
-            <span className="text-xs text-gray-400">Per gram · INR</span>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 className="text-base font-semibold text-gray-700">Price Trend (Live Session)</h3>
+              <span className="text-xs text-gray-400">Per gram · INR</span>
+            </div>
+            <div className="flex gap-2">
+              {['XAU', 'XAG', 'BOTH'].map((metal) => (
+                <button
+                  key={metal}
+                  onClick={() => setSelectedMetal(metal)}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition ${selectedMetal === metal ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                >
+                  {metal === 'XAU' ? 'Gold 24K' : metal === 'XAG' ? 'Silver' : 'Gold + Silver'}
+                </button>
+              ))}
+            </div>
           </div>
           {chartData.length < 2 ? (
             <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
               Collecting data points...
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="time" tick={{ fontSize: 11, fill: "#9CA3AF" }} />
-                <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} tickFormatter={(v) => `₹${v}`} width={70} />
-                <Tooltip content={<CustomTooltip />} />
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={chartData} margin={{ top: 0, right: 15, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="goldArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={METALS.XAU.color} stopOpacity={0.45} />
+                    <stop offset="95%" stopColor={METALS.XAU.color} stopOpacity={0.05} />
+                  </linearGradient>
+                  <linearGradient id="silverArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={METALS.XAG.color} stopOpacity={0.35} />
+                    <stop offset="95%" stopColor={METALS.XAG.color} stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" stroke="#1f2937" vertical={false} />
+                <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `₹${v}`} width={65} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#9ca3af', strokeWidth: 1 }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line type="monotone" dataKey="Gold (24K/g)" stroke={METALS.XAU.color} strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
-                <Line type="monotone" dataKey="Silver (/g)" stroke={METALS.XAG.color} strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
-              </LineChart>
+                {(selectedMetal === 'XAU' || selectedMetal === 'BOTH') && (
+                  <Area
+                    type="monotone"
+                    dataKey="Gold (24K/g)"
+                    stroke={METALS.XAU.color}
+                    strokeWidth={2}
+                    fill="url(#goldArea)"
+                    fillOpacity={0.8}
+                    dot={false}
+                    activeDot={{ r: 5 }}
+                  />
+                )}
+                {(selectedMetal === 'XAG' || selectedMetal === 'BOTH') && (
+                  <Area
+                    type="monotone"
+                    dataKey="Silver (/g)"
+                    stroke={METALS.XAG.color}
+                    strokeWidth={2}
+                    fill="url(#silverArea)"
+                    fillOpacity={0.8}
+                    dot={false}
+                    activeDot={{ r: 5 }}
+                  />
+                )}
+              </AreaChart>
             </ResponsiveContainer>
           )}
         </div>

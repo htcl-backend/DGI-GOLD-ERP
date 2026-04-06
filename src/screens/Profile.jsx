@@ -26,9 +26,24 @@ const Profile = () => {
             setLoading(true);
             setError("");
             try {
-                const result = await apiFetch(`/users/${parsed._id}`);
-                setUser(result.data);
-                localStorage.setItem("user", JSON.stringify(result.data));
+                // Use static mock profile data
+                const mockProfile = {
+                    _id: parsed._id,
+                    name: "Demo User",
+                    email: parsed.email || "demo@example.com",
+                    phone: "+91-9876543210",
+                    role: parsed.role || "vendor",
+                    address: "123 Demo Street, Bangalore, Karnataka",
+                    city: "Bangalore",
+                    state: "Karnataka",
+                    zipCode: "560001",
+                    gstin: "29DEMO1234A1Z5",
+                    createdAt: "2024-01-01",
+                    kycStatus: "Verified"
+                };
+
+                setUser(mockProfile);
+                localStorage.setItem("user", JSON.stringify(mockProfile));
             } catch (err) {
                 setError(err.message || "Unable to load profile");
             } finally {

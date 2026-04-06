@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { apiFetch } from "../api";
+import { useData } from "../Contexts/DataContext";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -19,27 +20,34 @@ ChartJS.register(
 );
 
 const Reports = () => {
+  const { allOrders } = useData();
   const [activeTab, setActiveTab] = useState("gold");
-  const [goldReports, setGoldReports] = useState([]);
-  const [silverReports, setSilverReports] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchReports();
-  }, []);
+  // Process reports from orders data
+  const { goldReports, silverReports } = useMemo(() => {
+    const gold = [];
+    const silver = [];
 
-  const fetchReports = async () => {
-    try {
-      const goldData = await apiFetch('/reports/gold');
-      const silverData = await apiFetch('/reports/silver');
-      setGoldReports(goldData.reports || goldData || []);
-      setSilverReports(silverData.reports || silverData || []);
-    } catch (error) {
-      console.error('Error fetching reports:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    allOrders.forEach(order => {
+      const report = {
+        customerName: order.customerName || 'N/A',
+        weight: order.weight,
+        purity: order.purity,
+        price: order.price,
+        totalAmount: order.totalAmount,
+        date: order.date,
+        delivered: order.delivered
+      };
+
+      if (order.category === 'gold') {
+        gold.push(report);
+      } else if (order.category === 'silver') {
+        silver.push(report);
+      }
+    });
+
+    return { goldReports: gold, silverReports: silver };
+  }, [allOrders]);
 
   const currentReports = activeTab === "gold" ? goldReports : silverReports;
 
@@ -82,20 +90,6 @@ const Reports = () => {
       }
     }
   };
-
-  if (loading) {
-    return (
-      <div>
-        <Sidebar />
-        <div className="w-full ml-[290px]">
-          <Header />
-          <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
-            <div className="text-xl">Loading reports...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>

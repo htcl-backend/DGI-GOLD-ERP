@@ -5,15 +5,13 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { NavLink } from "react-router-dom";
 import { CiExport, CiSearch } from "react-icons/ci";
-import { apiFetch } from "../api";
+import { useData } from "../contexts/DataContext";
 
 const pageNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const Orders = () => {
-  const [selected, setSelected] = useState("orders");
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { orders, loading, error } = useData(); // Use data from context
+  const [selected, setSelected] = useState("all"); // 'all' is a better default
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredOrders, setFilteredOrders] = useState([]);
 
@@ -26,55 +24,31 @@ const Orders = () => {
     setSearchTerm(term);
 
     if (term.trim() === "") {
-      setFilteredOrders(orders);
+      filterAndSetOrders(selected);
     } else {
-      const filtered = orders.filter(order =>
-        order.company_name.toLowerCase().includes(term.toLowerCase()) ||
-        order.manager.toLowerCase().includes(term.toLowerCase()) ||
-        order.id.toLowerCase().includes(term.toLowerCase())
+      const lowercasedTerm = term.toLowerCase();
+      const filtered = filteredOrders.filter(order =>
+        order.customerName?.toLowerCase().includes(lowercasedTerm) ||
+        order.productName?.toLowerCase().includes(lowercasedTerm) ||
+        order.id?.toLowerCase().includes(lowercasedTerm)
       );
       setFilteredOrders(filtered);
     }
   };
 
-  const formatOrder = (order) => ({
-    id: order._id,
-    company_name: order.customerName || order.customer?.name || "-",
-    manager: order.productName || order.product?.name || "-",
-    order_value: order.totalPrice ? `₹${order.totalPrice}` : "-",
-    order_date: order.orderDate ? new Date(order.orderDate).toLocaleDateString() : "",
-    status: order.status || "",
-  });
-
-  const mapStatusToApi = (status) => {
-    if (status === "new") return "pending";
-    if (status === "progress") return "processing";
-    if (status === "dispatched") return "shipped";
-    if (status === "Cancelled") return "cancelled";
-    return status;
-  };
-
-  const fetchOrders = async (status) => {
-    setLoading(true);
-    setError("");
-    try {
-      const apiStatus = mapStatusToApi(status);
-      const query = apiStatus && apiStatus !== "orders" ? `?status=${apiStatus}` : "";
-      const result = await apiFetch(`/orders${query}`);
-      const items = Array.isArray(result.orders) ? result.orders : [];
-      const formattedOrders = items.map(formatOrder);
-      setOrders(formattedOrders);
-      setFilteredOrders(formattedOrders);
-    } catch (err) {
-      setError(err.message || "Unable to load orders");
-    } finally {
-      setLoading(false);
+  const filterAndSetOrders = (status) => {
+    setSelected(status);
+    if (status === 'all') {
+      setFilteredOrders(orders);
+    } else {
+      setFilteredOrders(orders.filter(o => o.status.toLowerCase() === status.toLowerCase()));
     }
   };
 
   useEffect(() => {
-    fetchOrders(selected);
-  }, [selected]);
+    // Initially load all orders, then filter based on the selected tab
+    filterAndSetOrders(selected);
+  }, [orders, selected]); // Rerun when original orders or selected tab changes
 
   if (loading) {
     return (
@@ -103,70 +77,25 @@ const Orders = () => {
         <div className="Dashboard1 p-5 min-h-[calc(100vh-80px)] overflow-y-auto">
           <div className="flex justify-between my-3">
             <div className="flex gap-2.5 text-neutral-400">
-              <h2
-                className={`mb-5 cursor-pointer ${selected === "orders"
-                  ? "text-amber-500 border-b border-amber-500"
-                  : ""
-                  }`}
-                onClick={() => handleClick("orders")}
-              >
-                All orders
-              </h2>
-              <h2
-                className={`mb-5 cursor-pointer ${selected === "new"
-                  ? "text-amber-500 border-b border-amber-500"
-                  : ""
-                  }`}
-                onClick={() => handleClick("new")}
-              >
-                New
-              </h2>
-              <h2
-                className={`mb-5 cursor-pointer ${selected === "delivered"
-                  ? "text-amber-500 border-b border-amber-500"
-                  : ""
-                  }`}
-                onClick={() => handleClick("delivered")}
-              >
-                Delivered
-              </h2>
-
-              <h2
-                className={`mb-5 cursor-pointer ${selected === "progress"
-                  ? "text-amber-500 border-b border-amber-500"
-                  : ""
-                  }`}
-                onClick={() => handleClick("progress")}
-              >
-                In Progress
-              </h2>
-              <h2
-                className={`mb-5 cursor-pointer ${selected === "dispatched"
-                  ? "text-amber-500 border-b border-amber-500"
-                  : ""
-                  }`}
-                onClick={() => handleClick("dispatched")}
-              >
-                Dispatched
-              </h2>
-              <h2
-                className={`mb-5 cursor-pointer ${selected === "shipped"
-                  ? "text-amber-500 border-b border-amber-500"
-                  : ""
-                  }`}
-                onClick={() => handleClick("shipped")}
-              >
-                Shipped
-              </h2>
-              <h2
-                className={`mb-5 cursor-pointer ${selected === "Cancelled"
-                  ? "text-amber-500 border-b border-amber-500"
-                  : ""
-                  }`}
-                onClick={() => handleClick("Cancelled")}
-              >
-                Cancelled
-              </h2>
+              {[
+                { key: "all", label: "All Orders" },
+                { key: "Pending", label: "Pending" },
+                { key: "Processing", label: "Processing" },
+                { key: "Shipped", label: "Shipped" },
+                { key: "Delivered", label: "Delivered" },
+                { key: "Cancelled", label: "Cancelled" },
+              ].map(tab => (
+                <h2
+                  key={tab.key}
+                  className={`mb-5 cursor-pointer ${selected.toLowerCase() === tab.key.toLowerCase()
+                    ? "text-amber-500 border-b border-amber-500"
+                    : ""
+                    }`}
+                  onClick={() => filterAndSetOrders(tab.key)}
+                >
+                  {tab.label}
+                </h2>
+              ))}
             </div>
             <div className="flex text-[#CC7B25] justify-between gap-6">
               <button className="flex items-center gap-1.5 border border-amber-300 rounded-2xl px-4 py-2 font-bold text-[#CC7B25] hover:bg-amber-100 transition">
@@ -183,7 +112,7 @@ const Orders = () => {
                 type="text"
                 value={searchTerm}
                 onChange={handleSearch}
-                placeholder="Search orders by company, manager, or order ID..."
+                placeholder="Search orders by customer, product, or order ID..."
                 className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 pl-10"
               />
               <CiSearch className="absolute top-2.5 left-3 text-gray-400" />
@@ -197,10 +126,13 @@ const Orders = () => {
                   <input type="checkbox" />
                 </th>
                 <th className="py-2 px-4 text-left" scope="col">
-                  Company Name
+                  Order ID
                 </th>
                 <th className="py-2 px-4 text-left" scope="col">
-                  Manager
+                  Customer
+                </th>
+                <th className="py-2 px-4 text-left" scope="col">
+                  Product
                 </th>
                 <th className="py-2 px-4 text-left" scope="col">
                   Order Value
@@ -216,12 +148,17 @@ const Orders = () => {
             </thead>
             <tbody>
               {filteredOrders.map((item) => {
-                const statusColor =
-                  item.status === "New"
-                    ? "text-blue-500 bg-blue-100"
-                    : item.status === "Completed"
-                      ? "text-green-500 bg-green-100"
-                      : "text-orange-500 bg-orange-100";
+                const getStatusColor = (status) => {
+                  switch (status?.toLowerCase()) {
+                    case 'delivered': return 'text-green-500 bg-green-100';
+                    case 'processing': return 'text-blue-500 bg-blue-100';
+                    case 'shipped': return 'text-yellow-500 bg-yellow-100';
+                    case 'pending': return 'text-orange-500 bg-orange-100';
+                    case 'cancelled': return 'text-red-500 bg-red-100';
+                    default: return 'text-gray-500 bg-gray-100';
+                  }
+                };
+                const statusColor = getStatusColor(item.status);
 
                 return (
                   <tr key={item.id} className="hover:bg-gray-100 text-sm">
@@ -229,18 +166,21 @@ const Orders = () => {
                       <input type="checkbox" />
                     </td>
                     <td className="py-3 px-4 border-b border-gray-200 font-bold text-neutral-900 ">
-                      <NavLink to={`/order-details/${item.id}`}>
-                        {item.company_name}
+                      <NavLink to={`/orders/${item.id}`}>
+                        {item.id}
                       </NavLink>
                     </td>
                     <td className="py-3 px-4 border-b border-gray-100 ">
-                      {item.manager}
+                      {item.customerName}
+                    </td>
+                    <td className="py-3 px-4 border-b border-gray-100 ">
+                      {item.productName}
                     </td>
                     <td className="py-3 px-4 border-b border-gray-100 font-normal ">
-                      {item.order_value}
+                      ₹{item.totalPrice?.toLocaleString('en-IN') || '-'}
                     </td>
                     <td className="py-3 px-4 border-b border-gray-100 text-neutral-500 ">
-                      {item.order_date}
+                      {new Date(item.orderDate).toLocaleDateString()}
                     </td>
                     <td className={`py-3 px-4 border-b border-gray-100 text-xs`}>
                       <span

@@ -12,9 +12,63 @@ const DeliveryManagement = () => {
 
     const fetchDeliveries = async () => {
         try {
-            const response = await fetch('/api/deliveries');
-            const data = await response.json();
-            setDeliveries(data);
+            // Static mock data for deliveries
+            const mockDeliveries = [
+                {
+                    id: 1,
+                    orderNumber: "ORD-001",
+                    customerName: "Rajesh Kumar",
+                    customerPhone: "+91-9876543210",
+                    goldWeight: 25.5,
+                    goldPurity: "24K",
+                    totalAmount: 165750,
+                    orderDate: "2024-01-15",
+                    deliveryDate: "2024-01-18",
+                    status: "Delivered",
+                    address: "123 MG Road, Bangalore, Karnataka 560001"
+                },
+                {
+                    id: 2,
+                    orderNumber: "ORD-002",
+                    customerName: "Priya Sharma",
+                    customerPhone: "+91-9876543211",
+                    goldWeight: 15.2,
+                    goldPurity: "22K",
+                    totalAmount: 88280,
+                    orderDate: "2024-01-16",
+                    deliveryDate: "2024-01-20",
+                    status: "In Transit",
+                    address: "456 Brigade Road, Bangalore, Karnataka 560025"
+                },
+                {
+                    id: 3,
+                    orderNumber: "ORD-003",
+                    customerName: "Amit Singh",
+                    customerPhone: "+91-9876543212",
+                    goldWeight: 30.0,
+                    goldPurity: "18K",
+                    totalAmount: 135000,
+                    orderDate: "2024-01-17",
+                    deliveryDate: "2024-01-22",
+                    status: "Out for Delivery",
+                    address: "789 Commercial Street, Bangalore, Karnataka 560001"
+                },
+                {
+                    id: 4,
+                    orderNumber: "ORD-004",
+                    customerName: "Sneha Patel",
+                    customerPhone: "+91-9876543213",
+                    goldWeight: 10.8,
+                    goldPurity: "24K",
+                    totalAmount: 70200,
+                    orderDate: "2024-01-18",
+                    deliveryDate: "2024-01-25",
+                    status: "Pending",
+                    address: "321 Residency Road, Bangalore, Karnataka 560025"
+                }
+            ];
+
+            setDeliveries(mockDeliveries);
         } catch (error) {
             console.error('Error fetching deliveries:', error);
         } finally {
@@ -24,16 +78,12 @@ const DeliveryManagement = () => {
 
     const updateDeliveryStatus = async (id, status) => {
         try {
-            const response = await fetch(`/api/deliveries/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ status }),
-            });
-            if (response.ok) {
-                fetchDeliveries();
-            }
+            // Update local state instead of API call
+            setDeliveries(prevDeliveries =>
+                prevDeliveries.map(delivery =>
+                    delivery.id === id ? { ...delivery, status } : delivery
+                )
+            );
         } catch (error) {
             console.error('Error updating delivery:', error);
         }

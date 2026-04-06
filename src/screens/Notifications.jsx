@@ -2,29 +2,17 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { FaBell, FaCheck, FaTrash, FaExclamationTriangle, FaInfoCircle, FaCheckCircle } from "react-icons/fa";
-import { apiFetch } from "../api";
+import { useData } from "../contexts/DataContext";
 
 const Notifications = () => {
+  const { notifications: allNotifications, loading, error } = useData();
+  // The DataContext doesn't provide a way to update notifications, so we'll manage a local state for read/delete
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const fetchNotifications = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const result = await apiFetch("/notifications");
-      setNotifications(Array.isArray(result.notifications) ? result.notifications : []);
-    } catch (err) {
-      setError(err.message || "Unable to load notifications");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    // The notifications from useData are already filtered by role
+    setNotifications(allNotifications);
+  }, [allNotifications]);
 
   const [filter, setFilter] = useState("all");
 
@@ -33,11 +21,11 @@ const Notifications = () => {
       case "order":
         return <FaInfoCircle className="text-blue-500" />;
       case "delivery":
+      case "kyc":
         return <FaCheckCircle className="text-green-500" />;
       case "stock":
         return <FaExclamationTriangle className="text-red-500" />;
       case "payment":
-        return <FaCheckCircle className="text-green-500" />;
       case "system":
         return <FaInfoCircle className="text-gray-500" />;
       default:
@@ -45,47 +33,36 @@ const Notifications = () => {
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case "high":
+  const getPriorityColor = (type) => {
+    switch (type) {
+      case "stock":
         return "border-l-red-500";
-      case "medium":
+      case "order":
         return "border-l-yellow-500";
-      case "low":
+      case "system":
+      case "kyc":
+      case "delivery":
         return "border-l-gray-500";
       default:
         return "border-l-gray-500";
     }
   };
 
-  const markAsRead = async (id) => {
-    try {
-      await apiFetch(`/notifications/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({ read: true }),
-      });
-      setNotifications((prev) =>
-        prev.map((notif) => (notif._id === id || notif.id === id ? { ...notif, read: true } : notif))
-      );
-    } catch (err) {
-      // ignore update error, keep local state
-    }
+  const markAsRead = (id) => {
+    // This would call a context method in a real app, e.g., `updateNotification(id, { read: true })`
+    setNotifications((prev) =>
+      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
+    );
   };
 
   const markAllAsRead = async () => {
-    const toUpdate = notifications.filter((notif) => !notif.read);
-    for (const notif of toUpdate) {
-      await markAsRead(notif._id || notif.id);
-    }
+    // This would call a context method in a real app, e.g., `markAllNotificationsAsRead()`
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const deleteNotification = async (id) => {
-    try {
-      await apiFetch(`/notifications/${id}`, { method: "DELETE" });
-      setNotifications((prev) => prev.filter((notif) => notif._id !== id && notif.id !== id));
-    } catch (err) {
-      // ignore delete error
-    }
+    // This would call a context method in a real app, e.g., `deleteNotification(id)`
+    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
   };
 
   const filteredNotifications = notifications.filter(notif => {
@@ -145,7 +122,7 @@ const Notifications = () => {
               { key: "unread", label: "Unread" },
               { key: "order", label: "Orders" },
               { key: "delivery", label: "Delivery" },
-              { key: "stock", label: "Stock" },
+              { key: "kyc", label: "KYC" },
               { key: "payment", label: "Payment" }
             ].map(({ key, label }) => (
               <button
@@ -181,8 +158,8 @@ const Notifications = () => {
                 <div
                   key={notification.id}
                   className={`bg-white rounded-lg shadow-md p-4 border-l-4 ${getPriorityColor(
-                    notification.priority
-                  )} ${!notification.read ? "bg-blue-50" : ""}`}
+                    notification.type
+                  )} ${!notification.read ? "bg-amber-50" : ""}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
@@ -199,7 +176,9 @@ const Notifications = () => {
                           )}
                         </div>
                         <p className="text-gray-600 mb-2">{notification.message}</p>
-                        <p className="text-sm text-gray-500">{notification.time}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                     <div className="flex gap-2">

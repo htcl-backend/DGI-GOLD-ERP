@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { HiEyeOff, HiEye } from "react-icons/hi";
 import { Link, useNavigate } from "react-router-dom";
-import { apiFetch } from "../../api";
 import logo from "../../assets/img/logo 1.svg";
+import { useAuth } from "../../contexts/AuthContext";
 
 export const SignIn = () => {
   const [formData, setFormData] = useState({
@@ -14,37 +14,87 @@ export const SignIn = () => {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+  // Function to handle changes in form inputs
+  const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSignInClick = async (e) => {
-    e.preventDefault();
+  // Centralized login logic
+  const attemptLogin = async (email, password) => {
     setIsLoading(true);
     setError("");
 
     try {
-      const result = await apiFetch("/login", {
-        method: "POST",
-        body: JSON.stringify(formData),
-      });
+      const demoUsers = {
+        'superadmin@dgi.com': {
+          id: 'superadmin-1',
+          name: 'Super Admin',
+          username: 'Super Admin', // for header
+          email: 'superadmin@dgi.com',
+          role: 'superadmin'
+        },
+        'vendor@dgi.com': {
+          id: 'v-001',
+          name: 'Ramesh Jewellers',
+          username: 'Ramesh Jewellers', // for header
+          email: 'vendor@dgi.com',
+          role: 'vendor',
+          businessName: 'Ramesh Jewellers Pvt Ltd',
+          gstin: '27AABCU9603R1ZX',
+          kycStatus: 'verified',
+        }
+      };
 
-      // On success, store token and user info for API calls
-      localStorage.setItem("token", result.token);
-      if (result.user) {
-        localStorage.setItem("user", JSON.stringify(result.user));
+      const user = demoUsers[email];
+      const isValidPassword = (email === 'superadmin@dgi.com' && password === 'admin123') ||
+        (email === 'vendor@dgi.com' && password === 'vendor123');
+
+      if (user && isValidPassword) {
+        const mockToken = `mock-jwt-token-for-${user.role}`;
+
+        // Use AuthContext login to set user state and localStorage
+        const result = await login(user, mockToken);
+
+        if (result.success) {
+          // Navigate to dashboard based on role after auth state is updated
+          if (user.role === 'superadmin') {
+            navigate('/superadmin/dashboard');
+          } else if (user.role === 'vendor') {
+            navigate('/vendor/dashboard');
+          }
+        } else {
+          setError(result.error || 'Unable to sign in. Please try again.');
+        }
+      } else {
+        // In a real app, this would be the catch block for a failed API call
+        setError("Invalid email or password.");
       }
-      navigate("/dashboard"); // Redirect to dashboard on successful login
     } catch (err) {
-      setError(err.message || "Invalid credentials. Please try again.");
+      setError("An unexpected error occurred. Please try again.");
+      console.error("Login error:", err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handler for form submission
+  const handleSignInClick = (e) => {
+    e.preventDefault();
+    attemptLogin(formData.email, formData.password);
+  };
+
+  // Handler for demo buttons to fill credentials and log in
+  const fillDemo = (role) => {
+    let email, password;
+    if (role === 'superadmin') {
+      email = 'superadmin@dgi.com';
+      password = 'admin123';
+    } else if (role === 'vendor') {
+      email = 'vendor@dgi.com';
+      password = 'vendor123';
+    }
+    setFormData({ email, password }); // Update the form fields for visibility
+    attemptLogin(email, password); // Call login directly
   };
 
   return (
@@ -85,6 +135,7 @@ export const SignIn = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  autoComplete="email"
                 />
               </div>
 
@@ -99,6 +150,7 @@ export const SignIn = () => {
                   onChange={handleChange}
                   minLength={8}
                   required
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -119,6 +171,18 @@ export const SignIn = () => {
                   Forgot password?
                 </Link>
               </div>
+              <div className="mt-1 pt-5 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <button type="button" onClick={() => fillDemo("superadmin")} // Changed from handleDemoLogin
+                    className="text-xs py-2 px-3 rounded-lg border-2 border-dashed border-amber-300 text-amber-700 hover:bg-amber-50 font-semibold transition">
+                    👑 Super Admin
+                  </button>
+                  <button type="button" onClick={() => fillDemo("vendor")} // Changed from handleDemoLogin
+                    className="text-xs py-2 px-3 rounded-lg border-2 border-dashed border-blue-300 text-blue-700 hover:bg-blue-50 font-semibold transition">
+                    🏪 Vendor
+                  </button>
+                </div>
+              </div>
 
               <button
                 type="submit"
@@ -128,14 +192,10 @@ export const SignIn = () => {
                 {isLoading ? "Signing In..." : "Sign In"}
               </button>
 
-              <div className="text-center text-sm text-gray-600">
-                Need an account?{' '}
-                <Link to="/signup" className="text-amber-600 hover:underline">
-                  Sign Up
-                </Link>
-              </div>
             </form>
+
           </div>
+
         </div>
       </div>
     </div>

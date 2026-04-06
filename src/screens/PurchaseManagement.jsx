@@ -17,8 +17,55 @@ const PurchaseManagement = () => {
 
     const fetchTransactions = async () => {
         try {
-            const response = await apiFetch('/transactions');
-            const purchaseTransactions = response.transactions.filter(t => t.type === 'buy');
+            // Static mock purchase transactions data
+            const mockTransactions = [
+                {
+                    _id: "txn001",
+                    type: "buy",
+                    customerName: "Rajesh Kumar",
+                    material: "Gold 24K",
+                    weight: 25.5,
+                    price: 6500,
+                    totalAmount: 165750,
+                    date: "2024-01-15",
+                    status: "Completed"
+                },
+                {
+                    _id: "txn003",
+                    type: "buy",
+                    customerName: "Amit Singh",
+                    material: "Silver 999",
+                    weight: 500,
+                    price: 85,
+                    totalAmount: 42500,
+                    date: "2024-01-10",
+                    status: "Completed"
+                },
+                {
+                    _id: "txn005",
+                    type: "buy",
+                    customerName: "Vikram Rao",
+                    material: "Silver 925",
+                    weight: 300,
+                    price: 78,
+                    totalAmount: 23400,
+                    date: "2024-01-05",
+                    status: "Completed"
+                },
+                {
+                    _id: "txn006",
+                    type: "buy",
+                    customerName: "Sneha Patel",
+                    material: "Gold 22K",
+                    weight: 18.5,
+                    price: 5800,
+                    totalAmount: 107300,
+                    date: "2024-01-03",
+                    status: "Completed"
+                }
+            ];
+
+            const purchaseTransactions = mockTransactions.filter(t => t.type === 'buy');
             setTransactions(purchaseTransactions);
             setFilteredTransactions(purchaseTransactions);
         } catch (error) {

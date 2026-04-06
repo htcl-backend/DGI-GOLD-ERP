@@ -40,6 +40,7 @@ const LockScreen = ({ onUnlock, username }) => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            autoComplete="current-password"
                         />
                         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                     </div>

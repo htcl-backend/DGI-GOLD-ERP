@@ -1,144 +1,307 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Route, Routes, useNavigate, useLocation } from "react-router-dom";
-import Dashboard from "./screens/Dashboard";
-import SignIn from "./components/Auth/SignIn";
-import SignUp from "./components/Auth/SignUp";
-import ForgotPassword from "./components/Auth/ForgotPassword";
-import Orders from "./screens/Orders";
-import OrderDetails from "./screens/OrdersDetails";
-import { HeaderProvider } from "./Contexts/HeaderContext";
-import AddProduct from "./screens/Product/AddProduct";
-import Inventory from "./screens/Product/Inventory";
-import ProductList from "./screens/Product/ProductList";
-import BuyGold from "./screens/Product/BuyGold";
-import SellGold from "./screens/Product/SellGold";
-import Customer from "./screens/Customer";
-import Delivered from "./screens/Delivered";
-import Settings from "./screens/Settings";
-import Profile from "./screens/Profile";
-import Notifications from "./screens/Notifications";
-import DeliveryManagement from "./screens/DeliveryManagement";
-import Sales from "./screens/Sales";
-import PurchaseManagement from "./screens/PurchaseManagement";
-import Accounts from "./screens/Accounts";
-import Transactions from "./screens/Transactions";
-import LockScreen from "./screens/LockScreen"; // Import the new LockScreen component
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { DataProvider } from './contexts/DataContext';
+import { HeaderProvider } from './Contexts/HeaderContext';
 
-// Component to protect routes
-const ProtectedRoute = ({ children }) => {
-  const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+// Auth Components
+import Login from './components/Auth/SignIn';
+import Register from './screens/Auth/Register';
+import ProtectedRoute from './components/RoleProtectedRoute';
 
-  useEffect(() => {
-    if (!token) {
-      navigate("/signin");
-    }
-  }, [token, navigate]);
+// Vendor Components
+import VendorDashboard from './screens/vendor/Dashboard';
+import Orders from './screens/Orders';
+import OrdersDetails from './screens/OrdersDetails';
+import BuyGold from './screens/BuyGold';
+import SellGold from './screens/Product/SellGold';
+import Inventory from './screens/Product/Inventory';
+import ProductList from './screens/Product/ProductList';
+import Kyc from './screens/Kyc';
+import Profile from './screens/Profile';
+import Settings from './screens/Settings';
+import Transactions from './screens/Transactions';
+import Notifications from './screens/Notifications';
+import Reports from './screens/Reports';
+import Customer from './screens/Customer';
+import Vendors from './screens/Vendors';
+import DeliveryManagement from './screens/DeliveryManagement';
+import PurchaseManagement from './screens/PurchaseManagement';
+import GoldPriceDashboard from './screens/GoldPriceDashboard';
 
-  return token ? children : null;
-};
+// SuperAdmin Components
+import SuperAdminDashboard from './screens/superadmin/Dashboard';
+import AllOrders from './screens/superadmin/AllOrders';
+import AllCustomers from './screens/superadmin/AllCustomers';
+import KycApprovals from './screens/superadmin/KycApprovals';
+import SuperAdminReports from './screens/superadmin/Reports';
+import SuperAdminVendors from './screens/superadmin/Vendors';
 
-const App = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [isLocked, setIsLocked] = useState(false);
-  const [lastActivityTime, setLastActivityTime] = useState(Date.now());
-  const [username, setUsername] = useState("User");
-
-  const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-  // Function to update activity time
-  const updateActivityTime = useCallback(() => {
-    setLastActivityTime(Date.now());
-    if (isLocked) {
-      setIsLocked(false); // Unlock immediately on activity if already locked
-    }
-  }, [isLocked]);
-
-  // Event listeners for activity
-  useEffect(() => {
-    window.addEventListener('mousemove', updateActivityTime);
-    window.addEventListener('keydown', updateActivityTime);
-    window.addEventListener('click', updateActivityTime);
-
-    return () => {
-      window.removeEventListener('mousemove', updateActivityTime);
-      window.removeEventListener('keydown', updateActivityTime);
-      window.removeEventListener('click', updateActivityTime);
-    };
-  }, [updateActivityTime]);
-
-  // Inactivity timer
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (Date.now() - lastActivityTime > INACTIVITY_TIMEOUT && !isLocked) {
-        setIsLocked(true);
-      }
-    }, 1000); // Check every second
-
-    return () => clearInterval(interval);
-  }, [lastActivityTime, isLocked, INACTIVITY_TIMEOUT]);
-
-  // Get username from localStorage for lock screen
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        setUsername(user.username || "User");
-      } catch (e) { console.error("Failed to parse user from localStorage", e); }
-    }
-  }, []);
-
-  // Redirect to signin if not authenticated and not on auth pages
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const authPaths = ["/", "/signin", "/signup", "/forgot-password"];
-    if (!token && !authPaths.includes(location.pathname)) {
-      navigate("/signin");
-    }
-  }, [location.pathname, navigate]);
-
-  const handleUnlockScreen = () => {
-    setIsLocked(false);
-    setLastActivityTime(Date.now()); // Reset timer after unlock
-  };
-
-  if (isLocked) {
-    return <LockScreen onUnlock={handleUnlockScreen} username={username} />;
-  }
-
+function App() {
   return (
     <HeaderProvider>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<SignUp />} /> {/* Default to SignUp for new users */}
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+      <AuthProvider>
+        <DataProvider>
+          <Routes>
+            {/* Auth Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signin" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-        {/* Protected Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-        <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-        <Route path="/order-details" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
-        <Route path="/add-product" element={<ProtectedRoute><AddProduct /></ProtectedRoute>} />
-        <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-        <Route path="/product-list" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
-        <Route path="/buy-gold" element={<ProtectedRoute><BuyGold /></ProtectedRoute>} />
-        <Route path="/sell-gold" element={<ProtectedRoute><SellGold /></ProtectedRoute>} />
-        <Route path="/customer" element={<ProtectedRoute><Customer /></ProtectedRoute>} />
-        <Route path="/delivered" element={<ProtectedRoute><Delivered /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/delivery-management" element={<ProtectedRoute><DeliveryManagement /></ProtectedRoute>} />
-        <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
-        <Route path="/purchase-management" element={<ProtectedRoute><PurchaseManagement /></ProtectedRoute>} />
-        <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
-        <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
-      </Routes>
+            {/* SuperAdmin Routes */}
+            <Route
+              path="/superadmin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <SuperAdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/orders"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <AllOrders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/all-orders"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <AllOrders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/customers"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <AllCustomers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/all-customers"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <AllCustomers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/kyc"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <KycApprovals />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/kyc-approvals"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <KycApprovals />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/reports"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <SuperAdminReports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/vendors"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <SuperAdminVendors />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Vendor Routes */}
+            <Route
+              path="/vendor/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['vendor', 'VENDOR']}>
+                  <VendorDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:id"
+              element={
+                <ProtectedRoute>
+                  <OrdersDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/buy-gold"
+              element={
+                <ProtectedRoute>
+                  <BuyGold />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sell-gold"
+              element={
+                <ProtectedRoute>
+                  <SellGold />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inventory"
+              element={
+                <ProtectedRoute>
+                  <Inventory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/product-list"
+              element={
+                <ProtectedRoute>
+                  <ProductList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kyc"
+              element={
+                <ProtectedRoute>
+                  <Kyc />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute>
+                  <Transactions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customers"
+              element={
+                <ProtectedRoute>
+                  <Customer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customer"
+              element={
+                <ProtectedRoute>
+                  <Customer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vendors"
+              element={
+                <ProtectedRoute>
+                  <Vendors />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/delivery"
+              element={
+                <ProtectedRoute>
+                  <DeliveryManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/deliveries"
+              element={
+                <ProtectedRoute>
+                  <DeliveryManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchase"
+              element={
+                <ProtectedRoute>
+                  <PurchaseManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/prices"
+              element={
+                <ProtectedRoute>
+                  <GoldPriceDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Dashboard Redirect */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <VendorDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Default Route */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </DataProvider>
+      </AuthProvider>
     </HeaderProvider>
   );
-};
+}
 
 export default App;

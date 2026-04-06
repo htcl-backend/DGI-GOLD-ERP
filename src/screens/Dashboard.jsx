@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import OverviewCard from "../components/OverviewCard";
-import { FaRupeeSign, FaClipboard, FaArchive, FaMoneyBillWave, FaTimes } from "react-icons/fa";
+import { FaMoneyBillWave, FaClipboard, FaArchive, FaTimes } from "react-icons/fa";
 import { Line, Doughnut, Bar } from "react-chartjs-2";
 import { apiFetch } from "../api";
 import {
@@ -39,13 +39,57 @@ const Dashboard = () => {
   const [selectedModal, setSelectedModal] = useState(null);
 
   useEffect(() => {
+    const defaultStats = {
+      todaysSales: 76500,
+      goldRate: 6520,
+      activeOrders: 17,
+      totalStock: 138,
+      totalRevenue: 1550000,
+      cashBalance: 650000,
+      monthlySales: [
+        { month: 1, sales: 13000 },
+        { month: 2, sales: 19500 },
+        { month: 3, sales: 15000 },
+        { month: 4, sales: 22000 },
+        { month: 5, sales: 26000 },
+      ],
+      orderStatus: [
+        { status: 'Pending', count: 12 },
+        { status: 'Processing', count: 25 },
+        { status: 'Shipped', count: 18 },
+        { status: 'Delivered', count: 47 },
+        { status: 'Cancelled', count: 8 },
+      ],
+      topMaterials: [
+        { material: 'Gold 24K', value: 45.2 },
+        { material: 'Gold 22K', value: 32.8 },
+        { material: 'Gold 18K', value: 28.5 },
+        { material: 'Silver 999', value: 15.3 },
+      ],
+      recentOrders: [
+        { orderNumber: 'ORD-2024-001', customer: 'Rajesh Kumar', material: 'Gold 24K', value: '₹2,45,000', status: 'Delivered' },
+        { orderNumber: 'ORD-2024-002', customer: 'Priya Sharma', material: 'Gold 22K', value: '₹1,89,000', status: 'Processing' },
+        { orderNumber: 'ORD-2024-003', customer: 'Amit Patel', material: 'Silver 999', value: '₹95,000', status: 'Shipped' },
+      ],
+      lowStockAlerts: [
+        { name: 'Gold 18K', currentStock: 12, threshold: 15 },
+        { name: 'Silver 999', currentStock: 8, threshold: 10 },
+      ],
+      cashBalanceHistory: [
+        { date: '2024-06-23', transaction: 'Sale payment received', amount: '+₹80,000', balance: '₹5,70,000' },
+        { date: '2024-06-22', transaction: 'Purchase of material', amount: '-₹48,000', balance: '₹4,90,000' },
+      ],
+      x: []
+    };
+
     const fetchStats = async () => {
       setError("");
       try {
-        const data = await apiFetch("/dashboard/stats");
-        setStats(data);
+        // Use static data instead of API call
+        setStats(defaultStats);
       } catch (err) {
-        setError(err.message || "Unable to load dashboard data");
+        setError("Unable to connect to API, showing static demo data");
+        setStats(defaultStats);
       }
     };
 
@@ -59,7 +103,6 @@ const Dashboard = () => {
     const intervalId = setInterval(fetchStats, 60000); // Refresh stats every 60 seconds
 
     return () => clearInterval(intervalId); // Cleanup on unmount
-
   }, []);
 
   // Overview metrics

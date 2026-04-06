@@ -14,10 +14,84 @@ const ProductList = () => {
 
   const fetchProducts = async () => {
     try {
-      const goldResponse = await fetch('/api/products/gold');
-      const silverResponse = await fetch('/api/products/silver');
-      const goldData = await goldResponse.json();
-      const silverData = await silverResponse.json();
+      // Static mock data for gold products
+      const goldData = [
+        {
+          name: "Gold Bar 24K",
+          purity: "24K",
+          stock: 50,
+          price: 6500,
+          value: 325000
+        },
+        {
+          name: "Gold Coin 22K",
+          purity: "22K",
+          stock: 100,
+          price: 5800,
+          value: 580000
+        },
+        {
+          name: "Gold Jewelry Set",
+          purity: "18K",
+          stock: 25,
+          price: 4500,
+          value: 112500
+        },
+        {
+          name: "Gold Chain 20K",
+          purity: "20K",
+          stock: 75,
+          price: 5200,
+          value: 390000
+        },
+        {
+          name: "Gold Ring 24K",
+          purity: "24K",
+          stock: 200,
+          price: 6800,
+          value: 1360000
+        }
+      ];
+
+      // Static mock data for silver products
+      const silverData = [
+        {
+          name: "Silver Bar 999",
+          purity: "999",
+          stock: 100,
+          price: 85,
+          value: 8500
+        },
+        {
+          name: "Silver Coin 925",
+          purity: "925",
+          stock: 500,
+          price: 78,
+          value: 39000
+        },
+        {
+          name: "Silver Jewelry Set",
+          purity: "925",
+          stock: 150,
+          price: 92,
+          value: 13800
+        },
+        {
+          name: "Silver Chain 925",
+          purity: "925",
+          stock: 300,
+          price: 65,
+          value: 19500
+        },
+        {
+          name: "Silver Ring 999",
+          purity: "999",
+          stock: 400,
+          price: 88,
+          value: 35200
+        }
+      ];
+
       setGoldProducts(goldData);
       setSilverProducts(silverData);
     } catch (error) {
@@ -59,8 +133,8 @@ const ProductList = () => {
                   <button
                     onClick={() => setActiveTab("gold")}
                     className={`flex-1 px-6 py-4 font-medium text-sm border-b-2 transition ${activeTab === "gold"
-                        ? "border-amber-500 text-amber-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-amber-500 text-amber-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     Gold Products
@@ -68,8 +142,8 @@ const ProductList = () => {
                   <button
                     onClick={() => setActiveTab("silver")}
                     className={`flex-1 px-6 py-4 font-medium text-sm border-b-2 transition ${activeTab === "silver"
-                        ? "border-amber-500 text-amber-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-amber-500 text-amber-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     Silver Products

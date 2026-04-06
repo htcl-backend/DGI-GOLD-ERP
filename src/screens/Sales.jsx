@@ -17,8 +17,55 @@ const Sales = () => {
 
     const fetchTransactions = async () => {
         try {
-            const response = await apiFetch('/transactions');
-            const salesTransactions = response.transactions.filter(t => t.type === 'sell');
+            // Static mock sales transactions data
+            const mockTransactions = [
+                {
+                    _id: "txn001",
+                    type: "sell",
+                    customerName: "Rajesh Kumar",
+                    material: "Gold 24K",
+                    weight: 25.5,
+                    price: 6500,
+                    totalAmount: 165750,
+                    date: "2024-01-15",
+                    status: "Completed"
+                },
+                {
+                    _id: "txn002",
+                    type: "sell",
+                    customerName: "Priya Sharma",
+                    material: "Gold 22K",
+                    weight: 15.2,
+                    price: 5800,
+                    totalAmount: 88160,
+                    date: "2024-01-12",
+                    status: "Completed"
+                },
+                {
+                    _id: "txn003",
+                    type: "sell",
+                    customerName: "Amit Singh",
+                    material: "Silver 999",
+                    weight: 500,
+                    price: 85,
+                    totalAmount: 42500,
+                    date: "2024-01-10",
+                    status: "Completed"
+                },
+                {
+                    _id: "txn004",
+                    type: "sell",
+                    customerName: "Sneha Patel",
+                    material: "Gold 18K",
+                    weight: 20.0,
+                    price: 4500,
+                    totalAmount: 90000,
+                    date: "2024-01-08",
+                    status: "Completed"
+                }
+            ];
+
+            const salesTransactions = mockTransactions.filter(t => t.type === 'sell');
             setTransactions(salesTransactions);
             setFilteredTransactions(salesTransactions);
         } catch (error) {

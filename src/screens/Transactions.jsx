@@ -14,21 +14,66 @@ const Transactions = () => {
                 setLoading(true);
                 setError(null);
 
-                // Fetch all combinations
-                const goldBuyRes = await apiFetch("/transactions/gold/buy"); // Assuming apiFetch returns the array directly
-                const goldSellRes = await apiFetch("/transactions/gold/sell"); // Assuming apiFetch returns the array directly
-                const silverBuyRes = await apiFetch("/transactions/silver/buy"); // Assuming apiFetch returns the array directly
-                const silverSellRes = await apiFetch("/transactions/silver/sell"); // Assuming apiFetch returns the array directly
-
-                // Combine all transactions
-                const allTransactions = [
-                    ...(goldBuyRes || []),
-                    ...(goldSellRes || []),
-                    ...(silverBuyRes || []),
-                    ...(silverSellRes || []),
+                // Static mock transactions data
+                const mockTransactions = [
+                    {
+                        _id: "txn001",
+                        type: "buy",
+                        material: "Gold 24K",
+                        customerName: "Rajesh Kumar",
+                        weight: 25.5,
+                        price: 6500,
+                        totalAmount: 165750,
+                        date: "2024-01-15",
+                        status: "Completed"
+                    },
+                    {
+                        _id: "txn002",
+                        type: "sell",
+                        material: "Gold 22K",
+                        customerName: "Priya Sharma",
+                        weight: 15.2,
+                        price: 5800,
+                        totalAmount: 88160,
+                        date: "2024-01-12",
+                        status: "Completed"
+                    },
+                    {
+                        _id: "txn003",
+                        type: "buy",
+                        material: "Silver 999",
+                        customerName: "Amit Singh",
+                        weight: 500,
+                        price: 85,
+                        totalAmount: 42500,
+                        date: "2024-01-10",
+                        status: "Completed"
+                    },
+                    {
+                        _id: "txn004",
+                        type: "sell",
+                        material: "Gold 18K",
+                        customerName: "Sneha Patel",
+                        weight: 20.0,
+                        price: 4500,
+                        totalAmount: 90000,
+                        date: "2024-01-08",
+                        status: "Completed"
+                    },
+                    {
+                        _id: "txn005",
+                        type: "buy",
+                        material: "Silver 925",
+                        customerName: "Vikram Rao",
+                        weight: 300,
+                        price: 78,
+                        totalAmount: 23400,
+                        date: "2024-01-05",
+                        status: "Completed"
+                    }
                 ];
 
-                setTransactions(allTransactions);
+                setTransactions(mockTransactions);
             } catch (err) {
                 console.error("Error fetching transactions:", err); // Added console.error for debugging
                 setError("Failed to fetch transactions");

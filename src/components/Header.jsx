@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { IoNotifications } from "react-icons/io5";
+import { IoNotifications, IoNotificationsCircle } from "react-icons/io5";
 import { GoQuestion } from "react-icons/go";
 import { FaCaretDown } from "react-icons/fa6";
 import profileImg from "../assets/images/users/user-1.jpg";
 import { useNavigate } from "react-router-dom";
+import { useData } from "../contexts/DataContext";
 
 // Header component
 const Header = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State to control dropdown visibi....
   const [username, setUsername] = useState("User");
+  const { notifications } = useData();
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -35,12 +38,17 @@ const Header = () => {
           <div>
             <ul className="text-gray-800">
               <li
-                className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+                className="px-4 py-2 hover:bg-gray-200 cursor-pointer relative"
                 onClick={() => {
                   navigate("/notifications");
                 }}
               >
-                <IoNotifications className="text-[#CC7B25FF]" />
+                <IoNotifications className="text-[#CC7B25FF] ,w-8 h-8" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
               </li>
             </ul>
           </div>

@@ -3,8 +3,10 @@ import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import { AiOutlineDelete } from "react-icons/ai";
 import { FaRegEdit, FaTimes, FaEye } from "react-icons/fa";
+import { useData } from "../../contexts/DataContext";
 
 const BuyGold = () => {
+  const { placeOrder, allOrders, allProducts } = useData();
   const [formData, setFormData] = useState({
     material: "gold",
     customerName: "",
@@ -19,80 +21,85 @@ const BuyGold = () => {
   });
 
   const [buyRecords, setBuyRecords] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchBuyRecords();
-  }, []);
-
-  const fetchBuyRecords = async () => {
-    try {
-      const response = await fetch('/api/transactions/gold/buy');
-      const data = await response.json();
-      setBuyRecords(data);
-    } catch (error) {
-      console.error('Error fetching buy records:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Filter buy transactions from all orders
+    const buyTransactions = allOrders.filter(order =>
+      order.type === 'buy' || order.material === 'gold'
+    );
+    setBuyRecords(buyTransactions);
+  }, [allOrders]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      const response = await fetch('/api/transactions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...formData, type: 'buy' }),
+      // Find matching product for inventory update
+      const product = allProducts.find(p =>
+        p.name.toLowerCase().includes(formData.material.toLowerCase())
+      );
+
+      const orderData = {
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
+        productName: `${formData.material} ${formData.purity}`,
+        quantity: parseFloat(formData.weight),
+        price: parseFloat(formData.buyPrice),
+        totalPrice: parseFloat(formData.totalAmount),
+        status: formData.delivered ? 'Delivered' : 'Processing',
+        orderDate: formData.date,
+        type: 'buy',
+        material: formData.material,
+        purity: formData.purity,
+        notes: formData.notes,
+        vendorId: 'v-001', // Default vendor for now
+      };
+
+      placeOrder(orderData);
+
+      setFormData({
+        material: "gold",
+        customerName: "",
+        customerPhone: "",
+        weight: "",
+        purity: "24K",
+        buyPrice: "",
+        totalAmount: "",
+        date: new Date().toISOString().split("T")[0],
+        delivered: false,
+        notes: "",
       });
-      if (response.ok) {
-        fetchBuyRecords();
-        setFormData({
-          material: "gold",
-          customerName: "",
-          customerPhone: "",
-          weight: "",
-          purity: "24K",
-          buyPrice: "",
-          totalAmount: "",
-          date: new Date().toISOString().split("T")[0],
-          delivered: false,
-          notes: "",
-        });
-      }
     } catch (error) {
       console.error('Error creating transaction:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`/api/transactions/${editingRecord._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      // Update local state instead of API call
+      setBuyRecords(prev => prev.map(record =>
+        record._id === editingRecord._id
+          ? { ...record, ...formData }
+          : record
+      ));
+
+      setEditingRecord(null);
+      setFormData({
+        material: "gold",
+        customerName: "",
+        customerPhone: "",
+        weight: "",
+        purity: "24K",
+        buyPrice: "",
+        totalAmount: "",
+        date: new Date().toISOString().split("T")[0],
+        delivered: false,
+        notes: "",
       });
-      if (response.ok) {
-        fetchBuyRecords();
-        setEditingRecord(null);
-        setFormData({
-          material: "gold",
-          customerName: "",
-          customerPhone: "",
-          weight: "",
-          purity: "24K",
-          buyPrice: "",
-          totalAmount: "",
-          date: new Date().toISOString().split("T")[0],
-          delivered: false,
-          notes: "",
-        });
-      }
     } catch (error) {
       console.error('Error updating transaction:', error);
     }
@@ -178,12 +185,8 @@ const BuyGold = () => {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`/api/transactions/${id}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        fetchBuyRecords();
-      }
+      // Update local state instead of API call
+      setBuyRecords(prev => prev.filter(record => record._id !== id));
     } catch (error) {
       console.error('Error deleting transaction:', error);
     }

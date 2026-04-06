@@ -1,20 +1,14 @@
 import React, { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import { useData } from "../../contexts/DataContext";
 
 const Inventory = () => {
+  const { allProducts } = useData();
   const [activeTab, setActiveTab] = useState("gold");
 
-  const goldInventory = [
-    { id: 1, name: "Gold 24K", stock: 100, purity: "99.9%", value: "₹5,00,000" },
-    { id: 2, name: "Gold 22K", stock: 150, purity: "91.6%", value: "₹7,50,000" },
-    { id: 3, name: "Gold 18K", stock: 200, purity: "75%", value: "₹8,00,000" },
-  ];
-
-  const silverInventory = [
-    { id: 1, name: "Silver 999", stock: 500, purity: "99.9%", value: "₹2,50,000" },
-    { id: 2, name: "Silver 925", stock: 300, purity: "92.5%", value: "₹1,20,000" },
-  ];
+  const goldInventory = allProducts.filter(p => p.category === 'gold');
+  const silverInventory = allProducts.filter(p => p.category === 'silver');
 
   const currentInventory = activeTab === "gold" ? goldInventory : silverInventory;
 
@@ -34,8 +28,8 @@ const Inventory = () => {
                   <button
                     onClick={() => setActiveTab("gold")}
                     className={`flex-1 px-6 py-4 font-medium text-sm border-b-2 transition ${activeTab === "gold"
-                        ? "border-amber-500 text-amber-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-amber-500 text-amber-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     Gold Inventory
@@ -43,8 +37,8 @@ const Inventory = () => {
                   <button
                     onClick={() => setActiveTab("silver")}
                     className={`flex-1 px-6 py-4 font-medium text-sm border-b-2 transition ${activeTab === "silver"
-                        ? "border-amber-500 text-amber-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-amber-500 text-amber-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     Silver Inventory

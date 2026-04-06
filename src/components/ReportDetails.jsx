@@ -18,21 +18,21 @@ const ReportDetails = () => {
           number="21"
           growthrate="5.39"
           bgColor="FDF7F2FF"
-          icon={<CiShoppingCart />}
+          icon={CiShoppingCart}
         />
         <OverviewCard
           text="Open"
           number="31"
           growthrate="5.39"
           bgColor="EEFCFFFF"
-          icon={<RiMenuAddFill />}
+          icon={RiMenuAddFill}
         />
         <OverviewCard
           text="All"
           number="298"
           growthrate="6.84"
           bgColor="F0F8FEFF"
-          icon={<IoMdContact />}
+          icon={IoMdContact}
         />
       </div>
     </div>

@@ -9,9 +9,24 @@ const SearchBar = () => {
         if (!searchTerm.trim()) return;
 
         try {
-            const response = await fetch(`/api/search?q=${encodeURIComponent(searchTerm)}`);
-            const data = await response.json();
-            setSearchResults(data);
+            // Static mock search data
+            const mockSearchData = [
+                { type: "Customer", name: "Rajesh Kumar", id: "1" },
+                { type: "Customer", name: "Priya Sharma", id: "2" },
+                { type: "Customer", name: "Amit Singh", id: "3" },
+                { type: "Product", name: "Gold Bar 24K", id: "p1" },
+                { type: "Product", name: "Silver Bar 999", id: "p2" },
+                { type: "Order", name: "ORD-001 - Rajesh Kumar", id: "o1" },
+                { type: "Order", name: "ORD-002 - Priya Sharma", id: "o2" }
+            ];
+
+            // Filter results based on search term
+            const filteredResults = mockSearchData.filter(item =>
+                item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.type.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            setSearchResults(filteredResults);
         } catch (error) {
             console.error('Error searching:', error);
         }
