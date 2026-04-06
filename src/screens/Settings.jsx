@@ -3,7 +3,7 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { FaUser, FaLock, FaBell, FaPalette, FaSave, FaEye, FaEyeSlash, FaTags } from "react-icons/fa";
 import profileImg from "../assets/images/users/user-1.jpg";
-import { HeaderContext } from "../Contexts/HeaderContext";
+import { HeaderContext } from "../contexts/HeaderContext";
 import { apiFetch } from "../api";
 
 const Settings = () => {

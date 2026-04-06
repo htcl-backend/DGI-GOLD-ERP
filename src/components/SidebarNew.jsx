@@ -8,7 +8,7 @@ import { PiUsersDuotone } from "react-icons/pi";
 import { MdOutlineCalendarViewWeek, MdOutlineDeliveryDining } from "react-icons/md";
 import { IoNotifications, IoSettings, IoShapesOutline, IoTrainSharp } from "react-icons/io5";
 import { Link } from "react-router-dom";
-import { HeaderContext } from "../Contexts/HeaderContext";
+import { HeaderContext } from "../contexts/HeaderContext";
 import { IoMdPin } from "react-icons/io";
 import { vendorNavItems } from "./Layout/VendorLayout";
 import { superAdminNavItems } from "./Layout/SuperAdminLayout";

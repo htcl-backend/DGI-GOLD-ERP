@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
-import { HeaderProvider } from './Contexts/HeaderContext';
+import { HeaderProvider } from './contexts/HeaderContext';
 
 // Auth Components
 import Login from './components/Auth/SignIn';
