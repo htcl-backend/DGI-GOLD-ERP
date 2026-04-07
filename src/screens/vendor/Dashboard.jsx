@@ -4,6 +4,7 @@ import Header from '../../components/Header';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import OverviewCard from '../../components/OverviewCard';
+import Wallet from '../../components/Wallet';
 import apiService from '../service/apiService';
 import { FaMoneyBillWave, FaShoppingCart, FaUsers, FaBox } from 'react-icons/fa';
 import {
@@ -187,6 +188,11 @@ const VendorDashboard = () => {
                                 icon={FaBox}
                                 color="amber"
                             />
+                        </div>
+
+                        {/* Wallet Section */}
+                        <div className="mb-8">
+                            <Wallet vendorData={user} />
                         </div>
 
                         {/* Charts Section */}
