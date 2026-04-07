@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../Contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import logo from "../../assets/img/logo 1.svg";
 
 // Icon components (inline to avoid react-icons dependency issues in preview)
