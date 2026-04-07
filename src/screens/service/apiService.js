@@ -1,8 +1,9 @@
-const API_BASE_URL = 'http://161.248.62.37:7527/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://161.248.62.37:7527/api/v1';
 
 class APIService {
     constructor() {
         this.baseURL = API_BASE_URL;
+        console.log('API Service initialized with URL:', this.baseURL);
     }
 
     getToken() {
