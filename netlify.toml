@@ -1,0 +1,27 @@
+[build]
+command = "npm run build"
+publish = "dist"
+
+# Handle SPA routing - all routes should serve index.html
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+
+# Cache static assets
+[[headers]]
+for = "/assets/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache index.html with short TTL
+[[headers]]
+for = "/index.html"
+[headers.values]
+Cache-Control = "public, max-age=0, must-revalidate"
+
+# Prevent caching service workers
+[[headers]]
+for = "/sw.js"
+[headers.values]
+Cache-Control = "public, max-age=0, must-revalidate"

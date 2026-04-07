@@ -1,6 +1,6 @@
 // Simple API helper to standardize requests and include auth token.
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://161.248.62.37:7527/api/v1/auth";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://161.248.62.37:7527/api/v1";
 
 export const getToken = () => {
     return localStorage.getItem("token");
