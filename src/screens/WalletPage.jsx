@@ -367,10 +367,10 @@ const WalletPage = () => {
 
             {/* Customer History Modal - Positioned at root level to show sidebar */}
             {selectedCustomer && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-auto">
                         {/* Modal Header */}
-                        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center shadow-lg z-50">
+                        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center shadow-lg z-[10000]\">
                             <div className="flex items-center gap-3">
                                 <FaArrowLeft className="cursor-pointer text-2xl hover:opacity-80" onClick={() => setSelectedCustomer(null)} />
                                 <div>
