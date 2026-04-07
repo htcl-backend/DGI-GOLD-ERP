@@ -11,6 +11,7 @@ import ProtectedRoute from './components/RoleProtectedRoute';
 
 // Vendor Components
 import VendorDashboard from './screens/vendor/Dashboard';
+import WalletPage from './screens/WalletPage';
 import Orders from './screens/Orders';
 import OrdersDetails from './screens/OrdersDetails';
 import BuyGold from './screens/BuyGold';
@@ -128,6 +129,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['vendor', 'VENDOR']}>
                   <VendorDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/wallet"
+              element={
+                <ProtectedRoute allowedRoles={['vendor', 'VENDOR']}>
+                  <WalletPage />
                 </ProtectedRoute>
               }
             />
