@@ -8,7 +8,7 @@ const AuthContext = createContext();
 const dummyProfiles = {
     'vendor': {
         id: 'v-001',
-        name: 'Ramesh Kumar',
+        name: 'Ramesh',
         email: 'vendor@dgi.com',
         role: 'VENDOR',
         businessName: 'Ramesh Jewellers Pvt Ltd',
