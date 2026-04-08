@@ -3,7 +3,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://161.248.62.37:7527/
 class APIService {
     constructor() {
         this.baseURL = API_BASE_URL;
-        console.log('API Service initialized with URL:', this.baseURL);
     }
 
     getToken() {
@@ -35,10 +34,10 @@ class APIService {
             }
 
             const response = await fetch(url, options);
-            const data = await response.json();
+            const data = await response.json().catch(() => null);
 
             if (!response.ok) {
-                throw new Error(data.message || `API Error: ${response.status}`);
+                throw new Error(data?.message || `API Error: ${response.status}`);
             }
 
             return { success: true, data, status: response.status };
@@ -50,6 +49,7 @@ class APIService {
 
     // ============== AUTHENTICATION APIs ==============
     auth = {
+
         register: (payload) => this.request('/auth/register', 'POST', payload),
         login: (payload) => this.request('/auth/login', 'POST', payload),
         logout: () => this.request('/auth/logout', 'POST'),

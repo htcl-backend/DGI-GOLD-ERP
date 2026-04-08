@@ -1,6 +1,7 @@
 // VendorLayout defines sidebar navigation for vendor accounts
 export const vendorNavItems = [
     { key: "dashboard", label: "Dashboard", path: "/vendor/dashboard" },
+    { key: "wallet", label: "Wallet", path: "/wallet" },
     { key: "orders", label: "Orders", path: "/orders" },
     { key: "customers", label: "Customers", path: "/customers" },
     { key: "products", label: "Products", path: "/product-list" },

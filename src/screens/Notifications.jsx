@@ -3,10 +3,13 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { FaBell, FaCheck, FaTrash, FaExclamationTriangle, FaInfoCircle, FaCheckCircle } from "react-icons/fa";
 import { useData } from "../contexts/DataContext";
+import { useAuth } from "../contexts/AuthContext";
 
 const Notifications = () => {
   const { notifications: allNotifications, loading, error } = useData();
-  // The DataContext doesn't provide a way to update notifications, so we'll manage a local state for read/delete
+  const { user } = useAuth();
+
+  // The notifications from useData are already filtered by role
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
@@ -101,7 +104,10 @@ const Notifications = () => {
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-3xl font-bold text-gray-800">Notifications</h2>
-              <p className="text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
+                Logged in as: <span className="font-semibold capitalize">{user?.role || 'User'}</span> ({user?.name})
+              </p>
+              <p className="text-gray-600 mt-2">
                 {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
               </p>
             </div>

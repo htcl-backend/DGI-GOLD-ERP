@@ -129,35 +129,87 @@ const dummyVendors = [
     }
 ];
 
-const dummyNotifications = [
-    {
-        id: 'notif-1',
-        title: 'New Order Received',
-        message: 'You have received a new order for 24K Gold Coin',
-        type: 'order',
-        read: false,
-        createdAt: '2024-01-25T10:00:00Z'
-    },
-    {
-        id: 'notif-2',
-        title: 'Payment Confirmed',
-        message: 'Payment of ₹1,62,500 has been confirmed',
-        type: 'payment',
-        read: true,
-        createdAt: '2024-01-24T15:30:00Z'
-    },
-    {
-        id: 'notif-3',
-        title: 'Low Stock Alert',
-        message: 'Silver Bar 1kg is running low on stock',
-        type: 'alert',
-        read: false,
-        createdAt: '2024-01-23T12:00:00Z'
-    }
-];
+const dummyNotifications = {
+    vendor: [
+        {
+            id: 'notif-v-1',
+            title: 'New Order Received',
+            message: 'You have received a new order for 24K Gold Coin from Rajesh Kumar',
+            type: 'order',
+            read: false,
+            createdAt: '2024-01-25T10:00:00Z',
+            role: 'vendor'
+        },
+        {
+            id: 'notif-v-2',
+            title: 'Payment Confirmed',
+            message: 'Payment of ₹1,62,500 has been confirmed for order #ORD-2024-005',
+            type: 'payment',
+            read: true,
+            createdAt: '2024-01-24T15:30:00Z',
+            role: 'vendor'
+        },
+        {
+            id: 'notif-v-3',
+            title: 'Low Stock Alert',
+            message: 'Silver Bar 1kg is running low on stock. Current: 15 units',
+            type: 'stock',
+            read: false,
+            createdAt: '2024-01-23T12:00:00Z',
+            role: 'vendor'
+        },
+        {
+            id: 'notif-v-4',
+            title: 'Shipment Dispatched',
+            message: 'Order #ORD-2024-003 has been shipped. Tracking: TRK123456789',
+            type: 'delivery',
+            read: false,
+            createdAt: '2024-01-22T08:45:00Z',
+            role: 'vendor'
+        }
+    ],
+    admin: [
+        {
+            id: 'notif-a-1',
+            title: 'New KYC Submission',
+            message: 'Vendor "Gold Traders Inc" has submitted KYC documents for verification',
+            type: 'kyc',
+            read: false,
+            createdAt: '2024-01-25T11:20:00Z',
+            role: 'admin'
+        },
+        {
+            id: 'notif-a-2',
+            title: 'System Alert',
+            message: 'Database backup completed successfully at 01:00 AM',
+            type: 'system',
+            read: true,
+            createdAt: '2024-01-25T01:00:00Z',
+            role: 'admin'
+        },
+        {
+            id: 'notif-a-3',
+            title: 'Vendor Dashboard Report',
+            message: 'Monthly revenue report for all vendors is ready for review',
+            type: 'system',
+            read: false,
+            createdAt: '2024-01-24T18:30:00Z',
+            role: 'admin'
+        },
+        {
+            id: 'notif-a-4',
+            title: 'Payment Issue Flagged',
+            message: 'Payment failure detected for order #ORD-2024-010. Action required.',
+            type: 'payment',
+            read: false,
+            createdAt: '2024-01-23T16:15:00Z',
+            role: 'admin'
+        }
+    ]
+};
 
 export const DataProvider = ({ children }) => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const [orders, setOrders] = useState([]);
     const [products, setProducts] = useState([]);
     const [vendors, setVendors] = useState(dummyVendors);
@@ -167,6 +219,14 @@ export const DataProvider = ({ children }) => {
     const [metalPrices, setMetalPrices] = useState({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Get role-specific notifications
+    const getNotificationsByRole = useCallback(() => {
+        if (!user) return [];
+
+        const userRole = user.role?.toLowerCase() === 'vendor' ? 'vendor' : 'admin';
+        return dummyNotifications[userRole] || [];
+    }, [user]);
 
     // Fetch Orders - using dummy data
     const fetchOrders = useCallback(async () => {
@@ -302,7 +362,7 @@ export const DataProvider = ({ children }) => {
         };
 
         loadData();
-    }, [isAuthenticated, fetchProducts, fetchOrders, fetchHoldings, fetchAddresses, fetchShipments, fetchMetalPrices]);
+    }, [isAuthenticated, user, fetchProducts, fetchOrders, fetchHoldings, fetchAddresses, fetchShipments, fetchMetalPrices]);
 
     // Refresh data when authentication changes
     useEffect(() => {
@@ -371,7 +431,7 @@ export const DataProvider = ({ children }) => {
         metalPrices,
         customers: dummyCustomers,
         vendors,
-        notifications: dummyNotifications,
+        notifications: getNotificationsByRole(),
 
         // State
         loading,
@@ -409,7 +469,10 @@ export const DataProvider = ({ children }) => {
             fetchAddresses();
             fetchShipments();
             fetchMetalPrices();
-        }
+        },
+
+        // Notifications
+        getNotificationsByRole
     };
 
     return (

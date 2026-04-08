@@ -45,9 +45,10 @@ function App() {
         <DataProvider>
           <Routes>
             {/* Auth Routes */}
-            <Route path="/login" element={<Login />} />
+            {/* <Route path="/" element={<AuthProvider />} /> */}
+            {/* <Route path="/login" element={<Login />} /> */}
             <Route path="/signin" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            {/* <Route path="/register" element={<Register />} /> */}
 
             {/* SuperAdmin Routes */}
             <Route

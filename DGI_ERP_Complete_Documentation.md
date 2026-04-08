@@ -17,7 +17,7 @@
    ↓
 2. handleSignInClick() calls apiFetch("/login", { email, password })
    ↓
-3. POST request to: http://161.248.62.37:7527/api/v1/auth/login
+3. POST request to: http://161.248.37.62:7527/api/v1/auth/login
    ↓
 4. Backend validates credentials and returns:
    {
@@ -420,9 +420,9 @@ const MyScreen = () => {
 ## 📝 Additional Notes
 
 ### API Base URL
-All API calls use: `http://161.248.62.37:7527/api/v1/auth`
-- Set in `.env` as `VITE_API_URL=http://161.248.62.37:7527/api/v1/auth`
-- `apiFetch("/login")` becomes `http://161.248.62.37:7527/api/v1/auth/login`
+All API calls use: `http://161.248.37.62:7527/api/v1/auth`
+- Set in `.env` as `VITE_API_URL=http://161.248.37.62:7527/api/v1/auth`
+- `apiFetch("/login")` becomes `http://161.248.37.62:7527/api/v1/auth/login`
 
 ### Route Protection
 - `/superadmin/*` routes require `role === "superadmin"`

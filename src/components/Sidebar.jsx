@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import logo from "../assets/img/logo 2.svg";
 import { RxDashboard } from "react-icons/rx";
 import { HiNumberedList } from "react-icons/hi2";
-import { FaFileAlt } from "react-icons/fa";
+import { FaFileAlt, FaWallet } from "react-icons/fa";
 import { AiFillProduct } from "react-icons/ai";
 import { PiUsersDuotone } from "react-icons/pi";
 import { MdOutlineCalendarViewWeek, MdOutlineDeliveryDining } from "react-icons/md";
@@ -26,6 +26,7 @@ const Sidebar = () => {
 
   const iconMap = {
     dashboard: <RxDashboard />,
+    wallet: <FaWallet />,
     orders: <HiNumberedList />,
     customers: <PiUsersDuotone />,
     products: <AiFillProduct />,

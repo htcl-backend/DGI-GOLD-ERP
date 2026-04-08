@@ -11,7 +11,7 @@ The MIME type error on Netlify and build failure on Vercel happened because:
 
 ### 1. ✅ API URL Fixed
 - File: `src/api.js`
-- Changed: `http://161.248.62.37:7527/api/v1/auth` → `http://161.248.62.37:7527/api/v1`
+- Changed: `http://161.248.37.62:7527/api/v1/auth` → `http://161.248.62.37:7527/api/v1`
 
 ### 2. ✅ Netlify Configuration
 - Created: `netlify.toml`
