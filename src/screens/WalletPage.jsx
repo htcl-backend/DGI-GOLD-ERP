@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../Contexts/AuthContext";
 import { FaWallet, FaPlus, FaEye, FaEyeSlash, FaDownload, FaFilter, FaHistory, FaTimes, FaArrowLeft } from "react-icons/fa";
 
 const WalletPage = () => {

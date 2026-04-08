@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
-import { useData } from '../../contexts/DataContext';
+import { useData } from '../../Contexts/DataContext';
 import { FaCheck, FaTimes, FaEye, FaDownload, FaExclamationTriangle } from 'react-icons/fa';
 
 const KycApprovals = () => {

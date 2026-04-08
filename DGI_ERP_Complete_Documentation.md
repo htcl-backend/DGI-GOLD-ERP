@@ -262,7 +262,7 @@ const {
 #### Code Pattern - Copy into ANY screen component:
 ```javascript
 // At the top of ANY screen component:
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../Contexts/AuthContext';
 
 const MyComponent = () => {
   const { user, isSuperAdmin, isVendor } = useAuth();
@@ -329,8 +329,8 @@ const {
 #### Code Pattern - Copy into ANY screen component:
 ```javascript
 // At the top of ANY screen component:
-import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useAuth } from '../../Contexts/AuthContext';
+import { useData } from '../../Contexts/DataContext';
 
 const MyComponent = () => {
   const { user, isSuperAdmin, isVendor } = useAuth();
@@ -384,8 +384,8 @@ const MyComponent = () => {
 ```javascript
 // Standard pattern for ALL screen components:
 import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useAuth } from '../../Contexts/AuthContext';
+import { useData } from '../../Contexts/DataContext';
 
 const MyScreen = () => {
   const { user, isSuperAdmin, isVendor } = useAuth();

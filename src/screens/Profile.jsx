@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { FaUser, FaFileInvoiceDollar, FaClipboardList, FaMapMarkerAlt, FaCogs, FaGift, FaHistory, FaWallet } from "react-icons/fa";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../Contexts/AuthContext";
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -79,8 +79,8 @@ const Profile = () => {
                                     </div>
                                     <div className="flex gap-2 flex-wrap justify-center">
                                         <span className={`px-4 py-2 rounded-full text-xs font-semibold text-white ${user?.role === 'VENDOR' || user?.role === 'vendor'
-                                                ? 'bg-blue-500'
-                                                : 'bg-purple-600'
+                                            ? 'bg-blue-500'
+                                            : 'bg-purple-600'
                                             }`}>
                                             {user?.role === 'VENDOR' || user?.role === 'vendor' ? '💼 Vendor' : '👑 Admin'}
                                         </span>

@@ -3,7 +3,7 @@ import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import { AiOutlineDelete } from "react-icons/ai";
 import { FaRegEdit, FaTimes, FaEye } from "react-icons/fa";
-import { useData } from "../../contexts/DataContext";
+import { useData } from "../../Contexts/DataContext";
 
 const BuyGold = () => {
   const { placeOrder, allOrders, allProducts } = useData();

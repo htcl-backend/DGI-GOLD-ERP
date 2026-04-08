@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Sidebar from '../components/SidebarNew';
 import Header from '../components/Header';
-import { useData } from '../contexts/DataContext';
+import { useData } from '../Contexts/DataContext';
 
 const Vendors = () => {
     const { allVendors, allProducts, allOrders } = useData();

@@ -5,7 +5,7 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { NavLink } from "react-router-dom";
 import { CiExport, CiSearch } from "react-icons/ci";
-import { useData } from "../contexts/DataContext";
+import { useData } from "../Contexts/DataContext";
 
 const pageNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 

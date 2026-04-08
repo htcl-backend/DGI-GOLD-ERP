@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { apiFetch } from "../api";
-import { useData } from "../contexts/DataContext";
+import { useData } from "../Contexts/DataContext";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,

@@ -1,6 +1,6 @@
 import React from 'react';
-import { useData } from '../contexts/DataContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useData } from '../Contexts/DataContext';
+import { useAuth } from '../Contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 

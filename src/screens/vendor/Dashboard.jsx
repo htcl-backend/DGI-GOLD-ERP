@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
-import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useAuth } from '../../Contexts/AuthContext';
+import { useData } from '../../Contexts/DataContext';
 import OverviewCard from '../../components/OverviewCard';
 import apiService from '../service/apiService';
 import { FaMoneyBillWave, FaShoppingCart, FaUsers, FaBox } from 'react-icons/fa';

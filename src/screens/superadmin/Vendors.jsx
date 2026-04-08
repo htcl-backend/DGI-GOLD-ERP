@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
-import { useData } from '../../contexts/DataContext';
+import { useData } from '../../Contexts/DataContext';
 import { FaEdit, FaTrash, FaPlus, FaCheck, FaTimes } from 'react-icons/fa';
 
 const Vendors = () => {

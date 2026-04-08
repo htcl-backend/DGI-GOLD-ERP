@@ -16,7 +16,7 @@ import {
     BarElement,
     Title,
 } from 'chart.js';
-import { useData } from "../../contexts/DataContext";
+import { useData } from "../../Contexts/DataContext";
 import GoldPriceDashboard from "../GoldPriceDashboard";
 import { useNavigate } from "react-router-dom";
 

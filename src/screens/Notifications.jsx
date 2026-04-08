@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { FaBell, FaCheck, FaTrash, FaExclamationTriangle, FaInfoCircle, FaCheckCircle } from "react-icons/fa";
-import { useData } from "../contexts/DataContext";
-import { useAuth } from "../contexts/AuthContext";
+import { useData } from "../Contexts/DataContext";
+import { useAuth } from "../Contexts/AuthContext";
 
 const Notifications = () => {
   const { notifications: allNotifications, loading, error } = useData();

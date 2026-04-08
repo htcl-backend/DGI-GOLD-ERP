@@ -4,7 +4,7 @@ import { GoQuestion } from "react-icons/go";
 import { FaCaretDown } from "react-icons/fa6";
 import profileImg from "../assets/images/users/user-1.jpg";
 import { useNavigate } from "react-router-dom";
-import { useData } from "../contexts/DataContext";
+import { useData } from "../Contexts/DataContext";
 
 // Header component
 const Header = () => {

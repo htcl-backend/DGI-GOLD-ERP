@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
-import { useData } from '../../contexts/DataContext';
+import { useData } from '../../Contexts/DataContext';
 import { FaEye, FaFilter, FaSearch } from 'react-icons/fa';
 
 const AllOrders = () => {
@@ -236,45 +236,45 @@ const AllOrders = () => {
                                                             {selectedOrder.status}
                                                         </span>
                                                     </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700">Order Date</label>
-                                                        <p className="mt-1 text-sm text-gray-900">
-                                                            {new Date(selectedOrder.orderDate).toLocaleString()}
-                                                        </p>
-                                                    </div>
                                                 </div>
-                                            </div>
-
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Items</h3>
-                                                <div className="space-y-3">
-                                                    <div className="bg-gray-50 p-3 rounded-lg">
-                                                        <div className="flex justify-between items-center">
-                                                            <div>
-                                                                <p className="text-sm font-medium text-gray-900">{selectedOrder.productName}</p>
-                                                                <p className="text-xs text-gray-600">Qty: {selectedOrder.quantity} @ ₹{selectedOrder.price?.toLocaleString('en-IN')}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="border-t pt-3 mt-3">
-                                                        <div className="flex justify-between items-center">
-                                                            <p className="text-sm font-semibold text-gray-900">Total Amount</p>
-                                                            <p className="text-lg font-bold text-amber-600">
-                                                                ₹{selectedOrder.totalPrice.toLocaleString('en-IN')}
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700">Order Date</label>
+                                                    <p className="mt-1 text-sm text-gray-900">
+                                                        {new Date(selectedOrder.orderDate).toLocaleString()}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {selectedOrder.notes && (
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-gray-800 mb-2">Notes</h3>
-                                                <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">{selectedOrder.notes}</p>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Items</h3>
+                                            <div className="space-y-3">
+                                                <div className="bg-gray-50 p-3 rounded-lg">
+                                                    <div className="flex justify-between items-center">
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-900">{selectedOrder.productName}</p>
+                                                            <p className="text-xs text-gray-600">Qty: {selectedOrder.quantity} @ ₹{selectedOrder.price?.toLocaleString('en-IN')}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="border-t pt-3 mt-3">
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="text-sm font-semibold text-gray-900">Total Amount</p>
+                                                        <p className="text-lg font-bold text-amber-600">
+                                                            ₹{selectedOrder.totalPrice.toLocaleString('en-IN')}
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        )}
+                                        </div>
+                                    </div>
+
+                                    {selectedOrder.notes && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Notes</h3>
+                                            <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">{selectedOrder.notes}</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

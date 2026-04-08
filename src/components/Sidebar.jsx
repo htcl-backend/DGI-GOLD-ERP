@@ -8,11 +8,11 @@ import { PiUsersDuotone } from "react-icons/pi";
 import { MdOutlineCalendarViewWeek, MdOutlineDeliveryDining } from "react-icons/md";
 import { IoNotifications, IoSettings, IoShapesOutline, IoTrainSharp } from "react-icons/io5";
 import { NavLink } from "react-router-dom";
-import { HeaderContext } from "../contexts/HeaderContext";
+import { HeaderContext } from "../Contexts/HeaderContext";
 import { IoMdPin } from "react-icons/io";
 import { vendorNavItems } from "./Layout/VendorLayout";
 import { superAdminNavItems } from "./Layout/SuperAdminLayout";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../Contexts/AuthContext";
 
 const Sidebar = () => {
   const { selected, setSelected } = useContext(HeaderContext);

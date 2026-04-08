@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
-import { useData } from '../../contexts/DataContext';
+import { useData } from '../../Contexts/DataContext';
 import { FaDownload, FaChartBar, FaCalendarAlt, FaMoneyBillWave, FaShoppingCart, FaUsers, FaStore } from 'react-icons/fa';
 import {
     Chart as ChartJS,
