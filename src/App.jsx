@@ -1,8 +1,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext.jsx';
-import { DataProvider } from './contexts/DataContext';
-import { HeaderProvider } from './contexts/HeaderContext';
+import { AuthProvider } from './Contexts/AuthContext.jsx';   // ✅
+import { DataProvider } from './Contexts/DataContext';        // ✅
+import { HeaderProvider } from './Contexts/HeaderContext';    // ✅
 
 // Auth Components
 import Login from './components/Auth/SignIn';
