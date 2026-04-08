@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext.jsx';
 import { DataProvider } from './contexts/DataContext';
 import { HeaderProvider } from './contexts/HeaderContext';
 
