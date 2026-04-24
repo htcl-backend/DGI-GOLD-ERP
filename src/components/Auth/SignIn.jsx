@@ -59,65 +59,20 @@ export const SignIn = () => {
     setIsLoading(true);
     setError("");
 
-    // Dummy user data
-    const dummyUsers = {
-      "superadmin@dgi.com": {
-        id: "superadmin-1",
-        name: "Super Admin",
-        email: "superadmin@dgi.com",
-        role: "superadmin",
-        permissions: ["all"],
-        createdAt: "2023-01-01T00:00:00Z",
-      },
-      "vendor@dgi.com": {
-        id: "v-001",
-        name: "Ramesh Jewellers",
-        email: "vendor@dgi.com",
-        role: "vendor",
-        businessName: "Ramesh Jewellers Pvt Ltd",
-        gstin: "27AABCU9603R1ZX",
-        kycStatus: "verified",
-        phone: "+91-9876543210",
-        address: "123 MG Road, Mumbai, Maharashtra 400001",
-        totalRevenue: 1250000,
-        totalOrders: 15,
-        createdAt: "2023-01-15T10:00:00Z",
-      },
-    };
-
-    // Credentials
-    const validCredentials = {
-      "superadmin@dgi.com": "admin123",
-      "vendor@dgi.com": "vendor123",
-    };
-
     try {
-      await new Promise((r) => setTimeout(r, 500)); // Simulate network delay
+      // ✅ All vendors use the vendor endpoint with dynamic tenantId from API response
+      // The backend returns tenantId in the response, so we pass null and let AuthContext handle it
+      const result = await login(email, password, null);
 
-      const user = dummyUsers[email];
-      const correctPassword = validCredentials[email];
+      console.log('🔐 SignIn: Login result=', result);
 
-      // Check if user exists and password is correct
-      if (user && password === correctPassword) {
-        // Use AuthContext login with user object (triggers demo mode)
-        const dummyToken = `demo-token-${Date.now()}`;
-        const result = await login(user, dummyToken);
-
-        if (result.success) {
-          // Small delay for better UX
-          await new Promise((r) => setTimeout(r, 300));
-
-          // Redirect based on role
-          if (user.role === "vendor") {
-            navigate("/vendor/dashboard");
-          } else if (user.role === "superadmin") {
-            navigate("/superadmin/dashboard");
-          }
-        } else {
-          setError(result.error || "Login failed");
-        }
+      if (result.success) {
+        console.log('✅ SignIn: Login successful, navigating to /vendor/dashboard');
+        await new Promise((r) => setTimeout(r, 300));
+        // ✅ All authenticated users go to vendor dashboard (no super admin UI)
+        navigate("/vendor/dashboard");
       } else {
-        setError("Invalid email or password. Try demo buttons below.");
+        setError(result.error || "Login failed. Please check your email and password.");
       }
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
@@ -129,15 +84,6 @@ export const SignIn = () => {
   const handleSignInClick = (e) => {
     e.preventDefault();
     attemptLogin(formData.email, formData.password);
-  };
-
-  const fillDemo = (role) => {
-    const creds =
-      role === "superadmin"
-        ? { email: "superadmin@dgi.com", password: "admin123" }
-        : { email: "vendor@dgi.com", password: "vendor123" };
-    setFormData(creds);
-    attemptLogin(creds.email, creds.password);
   };
 
   return (
@@ -523,68 +469,6 @@ export const SignIn = () => {
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Demo divider */
-        .demo-divider {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 14px;
-        }
-
-        .demo-divider span {
-          font-size: 0.7rem;
-          letter-spacing: 0.15em;
-          text-transform: uppercase;
-          color: #c0b0a0;
-          white-space: nowrap;
-        }
-
-        .demo-divider::before,
-        .demo-divider::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: #e8e0d4;
-        }
-
-        /* Demo buttons */
-        .demo-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-        }
-
-        .demo-btn {
-          padding: 11px 12px;
-          border-radius: 7px;
-          border: 1.5px dashed;
-          background: transparent;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 0.75rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.2s, transform 0.15s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-        }
-
-        .demo-btn:hover { transform: translateY(-1px); }
-        .demo-btn:active { transform: translateY(0); }
-
-        .demo-btn.admin {
-          border-color: #d4aa50;
-          color: #9a7020;
-        }
-        .demo-btn.admin:hover { background: rgba(196,155,69,0.08); }
-
-        .demo-btn.vendor {
-          border-color: #7eb8d4;
-          color: #2878a0;
-        }
-        .demo-btn.vendor:hover { background: rgba(96,168,210,0.08); }
-
         /* Responsive */
         @media (max-width: 900px) {
           .signin-root { grid-template-columns: 1fr; }
@@ -737,29 +621,6 @@ export const SignIn = () => {
                   "Sign In to Dashboard"
                 )}
               </button>
-
-              <div className="demo-divider">
-                <span>Quick demo access</span>
-              </div>
-
-              <div className="demo-grid">
-                <button
-                  type="button"
-                  className="demo-btn admin"
-                  onClick={() => fillDemo("superadmin")}
-                  disabled={isLoading}
-                >
-                  👑 Super Admin
-                </button>
-                <button
-                  type="button"
-                  className="demo-btn vendor"
-                  onClick={() => fillDemo("vendor")}
-                  disabled={isLoading}
-                >
-                  🏪 Vendor
-                </button>
-              </div>
             </form>
           </div>
         </div>

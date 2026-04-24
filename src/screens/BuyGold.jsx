@@ -29,7 +29,7 @@ const BuyGold = () => {
                     <h1 className="text-3xl font-bold mb-6">Buy Gold</h1>
 
                     <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
                             {products.map((product) => (
                                 <div key={product.id} className="border rounded-lg p-4 hover:shadow-lg transition">
                                     <h3 className="font-bold text-lg mb-2">{product.name}</h3>
@@ -48,7 +48,7 @@ const BuyGold = () => {
 
                     <div className="mt-8 bg-white rounded-lg shadow-md p-6">
                         <h2 className="text-2xl font-bold mb-4">Current Metal Prices</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                             <div className="p-4 border rounded">
                                 <p className="text-gray-600">24K Gold</p>
                                 <p className="text-2xl font-bold text-amber-600">₹{metalPrices.gold?.['24K']}</p>

@@ -7,18 +7,17 @@ const AuthContext = createContext();
 // Dummy user profiles for offline development
 const dummyProfiles = {
     'vendor': {
-        id: 'v-001',
-        name: 'Ramesh',
-        email: 'vendor@dgi.com',
-        role: 'VENDOR',
-        businessName: 'Ramesh Jewellers Pvt Ltd',
-        gstin: '27AABCU9603R1ZX',
-        kycStatus: 'verified',
-        phone: '+91-9876543210',
-        address: '123 MG Road, Mumbai, Maharashtra 400001',
-        totalRevenue: 1250000,
-        totalOrders: 15,
-        createdAt: '2023-01-15T10:00:00Z'
+        uid: 'vendor_owner_abc',
+        name: 'Vendor Owner ABC',
+        email: 'owner@vendorabc.com',
+        phoneNumber: '+919876543210',
+        profileImage: null,
+        role: 'VENDOR_OWNER',
+        tenantId: 'vendor_abc',
+        tier: 1,
+        kycLevel: 'none',
+        emailVerified: true,
+        isNewUser: false
     },
     'superadmin': {
         id: 'sa-001',
@@ -48,25 +47,34 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Load user from localStorage on mount - using dummy data
+    // On initial load, check for a token and restore user session
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('token');
-            const userRole = localStorage.getItem('userRole');
+            const storedUser = localStorage.getItem('user');
 
-            if (token && userRole) {
-                // Use dummy profile based on role
-                const dummyProfile = dummyProfiles[userRole.toLowerCase()];
-                if (dummyProfile) {
-                    setUser(dummyProfile);
-                } else {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('userRole');
+            // If no token, just set loading to false and continue
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
+            // ✅ If we have a stored user, use it immediately (login already gave us complete user data)
+            if (storedUser) {
+                try {
+                    const userData = JSON.parse(storedUser);
+                    setUser(userData);
+                    console.log('✅ User restored from storage:', userData.email);
+                } catch (e) {
+                    console.warn("Could not parse stored user:", e);
                 }
             }
+
+            // Set loading to false - we have the user data we need from login
             setLoading(false);
         };
         checkAuth();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const login = async (email, password, tenantId) => {
@@ -81,38 +89,59 @@ export const AuthProvider = ({ children }) => {
                 return { success: true };
             }
 
-            // For regular login, try API first, fallback to demo if fails
+            // ✅ MULTI-VENDOR SUPPORT: All logins use vendor endpoint to support multiple vendors
+            // Extract tenantId from API response dynamically - no hardcoding needed
             try {
-                const result = await apiService.auth.login({ email, password, tenantId });
+                const loginPayload = { email, password };
+                // If tenantId is explicitly provided, add it to payload
+                if (tenantId) {
+                    loginPayload.vendorId = tenantId;
+                }
+
+                // Always try vendor endpoint first (supports multi-vendor with dynamic tenant extraction)
+                const result = await apiService.auth.vendorLogin(loginPayload);
 
                 if (result.success) {
-                    const token = result.data.data?.token || result.data.token;
+                    // ✅ Handle vendor API response structure: { data: { data: { user, accessToken, refreshToken } } }
+                    const apiData = result.data.data || result.data;  // Get inner data layer
+                    const token = apiData.accessToken || apiData.token;
+                    const refreshToken = apiData.refreshToken || null;
+                    const userData = apiData.user || apiData;
+
+                    if (!token || !userData) {
+                        console.error('❌ Invalid API response structure:', result);
+                        return { success: false, error: 'Invalid login response from server' };
+                    }
+
+                    // ✅ Extract tenantId dynamically from API response
+                    const extractedTenantId = userData.tenantId || tenantId || '';
+
                     localStorage.setItem('token', token);
-                    setUser(result.data.data || result.data);
+                    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+                    localStorage.setItem('userRole', (userData.role || 'VENDOR_OWNER').toLowerCase());
+                    // ✅ Store tenant ID for vendor data filtering
+                    localStorage.setItem('vendorId', extractedTenantId);
+                    localStorage.setItem('tenantId', extractedTenantId);
+                    localStorage.setItem('user', JSON.stringify(userData));
+
+                    setUser(userData);
+                    console.log('✅ Vendor login successful:', userData.email, 'Tenant:', extractedTenantId);
                     return { success: true };
                 } else {
                     setError(result.error);
+                    console.error('❌ Login failed:', result.error);
                     return { success: false, error: result.error };
                 }
             } catch (apiError) {
-                // Fallback to demo login for development
-                console.warn('API login failed, using demo mode:', apiError.message);
-
-                // Determine role from email for demo purposes
-                let demoRole = 'customer';
-                if (email.includes('vendor')) demoRole = 'vendor';
-                else if (email.includes('admin')) demoRole = 'superadmin';
-
-                const demoUser = dummyProfiles[demoRole];
-                const demoToken = `demo-token-${Date.now()}`;
-
-                localStorage.setItem('token', demoToken);
-                localStorage.setItem('userRole', demoRole);
-                setUser(demoUser);
-                return { success: true };
+                // ❌ Real API connection failed - show error, don't fallback to demo
+                const errorMsg = apiError.message || 'API Server not responding. Please check your connection or contact support.';
+                console.error('🔴 Login API Error:', errorMsg);
+                setError(errorMsg);
+                return { success: false, error: errorMsg };
             }
         } catch (err) {
             setError(err.message);
+            console.error('🔴 Login error:', err.message);
             return { success: false, error: err.message };
         }
     };
@@ -136,11 +165,28 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await apiService.auth.logout();
-            localStorage.removeItem('token');
-            setUser(null);
+            // Attempt to logout from the server with timeout, but don't let it block client-side cleanup
+            const timeoutPromise = new Promise((resolve) =>
+                setTimeout(() => resolve({ success: true }), 2000)
+            );
+            await Promise.race([
+                apiService.auth.logout().catch(err => {
+                    console.warn("🟡 API logout failed (API unreachable):", err.message);
+                    return { success: true }; // Treat as success even if API fails
+                }),
+                timeoutPromise
+            ]);
         } catch (err) {
-            console.error('Logout error:', err);
+            console.warn("⚠️ Logout error:", err.message);
+        } finally {
+            // Always clear local storage and state
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('user');
+            localStorage.removeItem('vendorId');
+            localStorage.removeItem('tenantId');
+            setUser(null);
         }
     };
 
@@ -158,7 +204,8 @@ export const AuthProvider = ({ children }) => {
 
     const normalizedRole = user?.role?.toLowerCase();
     const isSuperAdminUser = normalizedRole === 'superadmin' || normalizedRole === 'super_admin';
-    const isVendorUser = normalizedRole === 'vendor';
+    const isVendorUser = normalizedRole === 'vendor' || normalizedRole === 'vendor_owner' || normalizedRole === 'vendor_operations';
+
 
     return (
         <AuthContext.Provider value={{

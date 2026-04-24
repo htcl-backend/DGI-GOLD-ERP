@@ -1,27 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { IoNotifications, IoNotificationsCircle } from "react-icons/io5";
-import { GoQuestion } from "react-icons/go";
+import React, { useState } from "react";
+import { IoNotifications } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa6";
 import profileImg from "../assets/images/users/user-1.jpg";
 import { useNavigate } from "react-router-dom";
 import { useData } from "../Contexts/DataContext";
+import { useAuth } from "../Contexts/AuthContext";
 
 // Header component
 const Header = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State to control dropdown visibi....
-  const [username, setUsername] = useState("User");
   const { notifications } = useData();
+  const { user } = useAuth();
   const unreadCount = notifications.filter(n => !n.read).length;
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        setUsername(user.username || "User");
-      } catch (e) { console.error("Failed to parse user from localStorage", e); }
-    }
-  }, []);
 
   // Toggle the dropdown menu when profile is clicke....
   const toggleDropdown = () => {
@@ -43,7 +33,7 @@ const Header = () => {
                   navigate("/notifications");
                 }}
               >
-                <IoNotifications className="text-[#CC7B25FF] ,w-8 h-8" />
+                <IoNotifications className="text-[#CC7B25FF] w-8 h-8" />
                 {unreadCount > 0 && (
                   <span className="absolute top-1 right-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
                     {unreadCount}
@@ -52,8 +42,6 @@ const Header = () => {
               </li>
             </ul>
           </div>
-          <div>
-          </div>
           <div className="flex items-center gap-1">
             <img
               src={profileImg}
@@ -61,7 +49,7 @@ const Header = () => {
               className="w-[36px] rounded-full cursor-pointer"
               onClick={toggleDropdown} // Toggle the dropdown when clicked
             />
-            <span>{username}</span>
+            <span>{user?.name || user?.email || "User"}</span>
             <FaCaretDown
               onClick={toggleDropdown}
               className="cursor-pointer text-[#CC7B25FF]"

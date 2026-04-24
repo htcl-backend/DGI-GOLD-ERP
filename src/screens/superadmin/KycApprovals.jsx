@@ -60,15 +60,15 @@ const KycApprovals = () => {
             <Sidebar />
             <div className="flex-1 ml-[290px] overflow-x-hidden">
                 <Header />
-                <div className="p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
+                <div className="p-4 sm:p-6 lg:p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-7xl mx-auto">
-                        <div className="mb-6">
-                            <h1 className="text-3xl font-bold text-gray-800">KYC Approvals</h1>
-                            <p className="text-gray-600 mt-2">Review and approve vendor KYC documents</p>
+                        <div className="mb-4 sm:mb-6">
+                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">KYC Approvals</h1>
+                            <p className="text-sm sm:text-base text-gray-600 mt-2">Review and approve vendor KYC documents</p>
                         </div>
 
                         {/* Stats Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5 mb-6">
                             <div className="bg-white rounded-lg shadow-md p-6">
                                 <h3 className="text-lg font-semibold text-gray-800">All</h3>
                                 <p className="text-3xl font-bold text-gray-800">{allVendors.length}</p>
@@ -185,7 +185,7 @@ const KycApprovals = () => {
                                         </div>
 
                                         <div className="space-y-6">
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700">Vendor Name</label>
                                                     <p className="mt-1 text-sm text-gray-900">{selectedVendor.name}</p>
@@ -228,7 +228,7 @@ const KycApprovals = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
                                                 {/* Document Section */}
                                                 <div>
                                                     <h3 className="text-lg font-semibold text-gray-800 mb-4">Submitted Documents</h3>

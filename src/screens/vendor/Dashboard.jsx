@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
+import LiveMetalsTicker from '../../components/LiveMetalsTicker';
 import { useAuth } from '../../Contexts/AuthContext';
 import { useData } from '../../Contexts/DataContext';
 import OverviewCard from '../../components/OverviewCard';
@@ -30,11 +31,54 @@ ChartJS.register(
     Legend
 );
 
-const VendorDashboard = () => {
-    const { user } = useAuth();
+// Error boundary
+class VendorDashboardErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error('🔴 VendorDashboard Error:', error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="flex min-h-screen flex-col items-center justify-center bg-red-50">
+                    <div className="text-red-600 text-center">
+                        <h1 className="text-2xl font-bold mb-2">Error Loading Vendor Dashboard</h1>
+                        <p className="text-red-500 mb-4">{this.state.error?.message}</p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                        >
+                            Reload Page
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+const VendorDashboardContent = () => {
+    const { user, loading: authLoading } = useAuth();
     const { orders, products, metalPrices, loading, error } = useData();
     const [ordersSummary, setOrdersSummary] = useState(null);
     const [holdingsSummary, setHoldingsSummary] = useState(null);
+
+    // Debug logging
+    useEffect(() => {
+        console.log('🔍 VendorDashboard: user=', user);
+        console.log('🔍 VendorDashboard: authLoading=', authLoading);
+        console.log('🔍 VendorDashboard: dataLoading=', loading);
+    }, [user, authLoading, loading]);
 
     // Fetch additional summaries with fallback data
     useEffect(() => {
@@ -189,18 +233,24 @@ const VendorDashboard = () => {
         }
     };
 
-    if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    if (loading) return <div className="flex items-center justify-center h-screen">Loading dashboard data...</div>;
 
     return (
         <div className="flex min-h-screen">
             <Sidebar />
             <div className="flex-1 ml-[290px] overflow-x-hidden">
                 <Header />
-                <div className="p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
+                <div className="p-4 sm:p-6 lg:p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-7xl mx-auto">
-                        <div className="mb-6">
-                            <h1 className="text-3xl font-bold text-gray-800">Vendor Dashboard</h1>
-                            <p className="text-gray-600 mt-2">Welcome back, {user?.name || 'User'}!</p>
+                        <div className="mb-4 sm:mb-6">
+                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Vendor Dashboard</h1>
+                            <p className="text-sm sm:text-base text-gray-600 mt-2">Welcome back, {user?.name || 'Vendor'}!</p>
+                            {/* DEBUG INFO */}
+                            {/* <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                <p>User: {user?.email}</p>
+                                <p>Role: {user?.role}</p>
+                                <p>Orders loaded: {orders.length}</p>
+                            </div> */}
                         </div>
 
                         {error && (
@@ -209,8 +259,13 @@ const VendorDashboard = () => {
                             </div>
                         )}
 
+                        {/* Live Gold & Silver Prices */}
+                        <div className="mb-8">
+                            <LiveMetalsTicker />
+                        </div>
+
                         {/* Overview Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
                             <OverviewCard
                                 title="Total Revenue"
                                 value={`₹${metrics.totalRevenue.toLocaleString('en-IN')}`}
@@ -238,10 +293,10 @@ const VendorDashboard = () => {
                         </div>
 
                         {/* Charts Section */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-8">
                             {/* Revenue Trend */}
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue Trend (Last 7 Days)</h3>
+                            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Revenue Trend (Last 7 Days)</h3>
                                 <div className="h-64">
                                     <Line
                                         data={revenueChartData}
@@ -350,9 +405,9 @@ const VendorDashboard = () => {
                         </div>
 
                         {/* Quick Stats */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
+                            <div className="bg-white rounded-lg shadow-md p-4 sm:p-5 lg:p-6">
+                                <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3 sm:mb-4">Order Summary</h3>
                                 <div className="space-y-3">
                                     <div className="flex justify-between">
                                         <span className="text-sm text-gray-600">Completed Orders</span>
@@ -403,6 +458,14 @@ const VendorDashboard = () => {
                 </div>
             </div>
         </div>
+    );
+};
+
+const VendorDashboard = () => {
+    return (
+        <VendorDashboardErrorBoundary>
+            <VendorDashboardContent />
+        </VendorDashboardErrorBoundary>
     );
 };
 

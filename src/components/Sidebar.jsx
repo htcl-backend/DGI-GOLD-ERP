@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import logo from "../assets/img/logo 2.svg";
 import { RxDashboard } from "react-icons/rx";
 import { HiNumberedList } from "react-icons/hi2";
-import { FaFileAlt, FaWallet } from "react-icons/fa";
+import { FaFileAlt, FaWallet, FaUser } from "react-icons/fa";
 import { AiFillProduct } from "react-icons/ai";
 import { PiUsersDuotone } from "react-icons/pi";
 import { MdOutlineCalendarViewWeek, MdOutlineDeliveryDining } from "react-icons/md";
@@ -11,18 +11,16 @@ import { NavLink } from "react-router-dom";
 import { HeaderContext } from "../Contexts/HeaderContext";
 import { IoMdPin } from "react-icons/io";
 import { vendorNavItems } from "./Layout/VendorLayout";
-import { superAdminNavItems } from "./Layout/SuperAdminLayout";
-import { useAuth } from "../Contexts/AuthContext";
 
 const Sidebar = () => {
   const { selected, setSelected } = useContext(HeaderContext);
-  const { user, isSuperAdmin } = useAuth();
 
   const handleClick = (status) => {
     setSelected(status);
   };
 
-  const navItems = isSuperAdmin ? superAdminNavItems : vendorNavItems;
+  // ✅ Always show vendor nav items - super admin role is hidden
+  const navItems = vendorNavItems;
 
   const iconMap = {
     dashboard: <RxDashboard />,
@@ -35,6 +33,7 @@ const Sidebar = () => {
     "sell-gold": <AiFillProduct />,
     deliveries: <MdOutlineDeliveryDining />,
     kyc: <IoMdPin />,
+    profile: <FaUser />,
     notifications: <IoNotifications />,
     settings: <IoSettings />,
     vendors: <IoTrainSharp />,

@@ -162,7 +162,7 @@ const WalletPage = () => {
 
                         {/* Balance Card */}
                         <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
                                 <div>
                                     <div className="flex justify-between items-center mb-4">
                                         <span className="text-lg opacity-90">Total Balance</span>
@@ -195,7 +195,7 @@ const WalletPage = () => {
                         </div>
 
                         {/* Account Details Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                             <div className="bg-white p-6 rounded-lg shadow-md">
                                 <p className="text-gray-600 text-sm mb-2">Account Holder</p>
                                 <p className="font-bold text-gray-800">{walletData.accountHolder}</p>
@@ -215,7 +215,7 @@ const WalletPage = () => {
                         </div>
 
                         {/* Contact & Banking */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
                             <div className="bg-white p-6 rounded-lg shadow-md">
                                 <h3 className="text-lg font-bold text-gray-800 mb-4">Contact Information</h3>
                                 <div className="space-y-3">

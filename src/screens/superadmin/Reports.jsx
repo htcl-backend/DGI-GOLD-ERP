@@ -215,7 +215,7 @@ const Reports = () => {
                         </div>
 
                         {/* Key Metrics */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-8">
                             <div className="bg-white rounded-lg shadow-md p-6">
                                 <div className="flex items-center">
                                     <FaMoneyBillWave className="h-8 w-8 text-green-600 mr-3" />
@@ -227,30 +227,30 @@ const Reports = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-lg shadow-md p-6">
+                            <div className="bg-white rounded-lg shadow-md p-4 sm:p-5 lg:p-6">
                                 <div className="flex items-center">
-                                    <FaShoppingCart className="h-8 w-8 text-blue-600 mr-3" />
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                                        <p className="text-2xl font-bold text-gray-900">{metrics.totalOrders}</p>
+                                    <FaShoppingCart className="h-6 sm:h-8 w-6 sm:w-8 text-blue-600 mr-2 sm:mr-3 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs sm:text-sm font-medium text-gray-600">Total Orders</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-gray-900">{metrics.totalOrders}</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-lg shadow-md p-6">
+                            <div className="bg-white rounded-lg shadow-md p-4 sm:p-5 lg:p-6">
                                 <div className="flex items-center">
-                                    <FaUsers className="h-8 w-8 text-purple-600 mr-3" />
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Active Customers</p>
-                                        <p className="text-2xl font-bold text-gray-900">{metrics.totalCustomers}</p>
+                                    <FaUsers className="h-6 sm:h-8 w-6 sm:w-8 text-purple-600 mr-2 sm:mr-3 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs sm:text-sm font-medium text-gray-600">Active Customers</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-gray-900">{metrics.totalCustomers}</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-lg shadow-md p-6">
+                            <div className="bg-white rounded-lg shadow-md p-4 sm:p-5 lg:p-6">
                                 <div className="flex items-center">
-                                    <FaChartBar className="h-8 w-8 text-amber-600 mr-3" />
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-600">Avg Order Value</p>
-                                        <p className="text-2xl font-bold text-gray-900">
+                                    <FaChartBar className="h-6 sm:h-8 w-6 sm:w-8 text-amber-600 mr-2 sm:mr-3 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs sm:text-sm font-medium text-gray-600">Avg Order Value</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-gray-900">
                                             ₹{metrics.avgOrderValue.toLocaleString('en-IN')}
                                         </p>
                                     </div>
@@ -259,10 +259,10 @@ const Reports = () => {
                         </div>
 
                         {/* Charts Section */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-8">
                             {/* Revenue by Vendor */}
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue by Vendor</h3>
+                            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Revenue by Vendor</h3>
                                 <div className="h-64">
                                     <Bar
                                         data={revenueChartData}
@@ -313,8 +313,8 @@ const Reports = () => {
 
                         {/* Order Status Distribution */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Status Distribution</h3>
+                            <div className="bg-white rounded-lg card-shadow p-4 sm:p-6">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Order Status Distribution</h3>
                                 <div className="h-64 flex items-center justify-center">
                                     <Doughnut
                                         data={statusChartData}
@@ -377,10 +377,10 @@ const Reports = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+                    </div >
+                </div >
+            </div >
+        </div >
     );
 };
 

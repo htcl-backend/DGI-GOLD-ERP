@@ -192,7 +192,7 @@ const PriceCard = ({ symbol, data, loading, error }) => {
   );
 };
 
-const GoldPriceDashboard = () => {
+const   GoldPriceDashboard = () => {
   const mockStateRef = useRef({ XAU: { ...MOCK_BASE.XAU }, XAG: { ...MOCK_BASE.XAG } });
 
   const [prices, setPrices] = useState({ XAU: null, XAG: null });
@@ -295,7 +295,7 @@ const GoldPriceDashboard = () => {
         )}
 
         {/* Price Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-8">
           {["XAU", "XAG"].map((sym) => (
             <PriceCard
               key={sym}

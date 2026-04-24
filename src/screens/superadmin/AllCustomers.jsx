@@ -54,15 +54,15 @@ const AllCustomers = () => {
             <Sidebar />
             <div className="flex-1 ml-[290px] overflow-x-hidden">
                 <Header />
-                <div className="p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
+                <div className="p-4 sm:p-6 lg:p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-7xl mx-auto">
-                        <div className="mb-6">
-                            <h1 className="text-3xl font-bold text-gray-800">All Customers</h1>
-                            <p className="text-gray-600 mt-2">Platform-wide customer management</p>
+                        <div className="mb-4 sm:mb-6">
+                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">All Customers</h1>
+                            <p className="text-sm sm:text-base text-gray-600 mt-2">Platform-wide customer management</p>
                         </div>
 
                         {/* Stats Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-6">
                             <div className="bg-white rounded-lg shadow-md p-6">
                                 <h3 className="text-lg font-semibold text-gray-800">Total Customers</h3>
                                 <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
@@ -83,7 +83,7 @@ const AllCustomers = () => {
 
                         {/* Filters */}
                         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div className="relative">
                                     <FaSearch className="absolute left-3 top-3 text-gray-400" />
                                     <input
@@ -201,7 +201,7 @@ const AllCustomers = () => {
                                             </button>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-6">
                                             <div>
                                                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Customer Information</h3>
                                                 <div className="space-y-3">

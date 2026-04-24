@@ -47,34 +47,46 @@ const dummyOrders = [
     {
         id: 'ord-1',
         customerId: 'cust-1',
+        customerName: 'Rajesh Kumar',
         vendorId: 'v-001',
         productId: 'prod-1',
         quantity: 2,
         totalPrice: 130400,
+        totalAmount: 130400,
         status: 'Delivered',
+        type: 'buy',
         orderDate: '2024-01-15T10:30:00Z',
+        createdAt: '2024-01-15T10:30:00Z',
         deliveryAddress: '123 Main St, Mumbai, MH 400001'
     },
     {
         id: 'ord-2',
         customerId: 'cust-2',
+        customerName: 'Priya Sharma',
         vendorId: 'v-001',
         productId: 'prod-2',
         quantity: 1,
         totalPrice: 162500,
+        totalAmount: 162500,
         status: 'Processing',
+        type: 'buy',
         orderDate: '2024-01-20T14:45:00Z',
+        createdAt: '2024-01-20T14:45:00Z',
         deliveryAddress: '456 Park Ave, Delhi, DL 110001'
     },
     {
         id: 'ord-3',
         customerId: 'cust-3',
+        customerName: 'Amit Singh',
         vendorId: 'v-001',
         productId: 'prod-3',
         quantity: 5,
         totalPrice: 440000,
+        totalAmount: 440000,
         status: 'Shipped',
+        type: 'sell',
         orderDate: '2024-01-25T09:15:00Z',
+        createdAt: '2024-01-25T09:15:00Z',
         deliveryAddress: '789 Market Rd, Bangalore, KA 560001'
     }
 ];
@@ -95,24 +107,33 @@ const dummyCustomers = [
         name: 'Rajesh Kumar',
         email: 'rajesh@example.com',
         phone: '+91-9876543210',
+        vendorId: 'v-001',
         totalOrders: 5,
-        totalSpent: 450000
+        totalSpent: 450000,
+        kycStatus: 'verified',
+        lastOrder: '2024-01-15'
     },
     {
         id: 'cust-2',
         name: 'Priya Sharma',
         email: 'priya@example.com',
         phone: '+91-9876543211',
+        vendorId: 'v-001',
         totalOrders: 3,
-        totalSpent: 280000
+        totalSpent: 280000,
+        kycStatus: 'pending',
+        lastOrder: '2024-01-20'
     },
     {
         id: 'cust-3',
         name: 'Amit Singh',
         email: 'amit@example.com',
         phone: '+91-9876543212',
+        vendorId: 'v-001',
         totalOrders: 8,
-        totalSpent: 720000
+        totalSpent: 720000,
+        kycStatus: 'verified',
+        lastOrder: '2024-01-25'
     }
 ];
 
@@ -125,7 +146,31 @@ const dummyVendors = [
         gstin: '27AABCU9603R1ZX',
         kycStatus: 'verified',
         totalRevenue: 1250000,
-        totalOrders: 15
+        totalOrders: 15,
+        bankDetails: {
+            accountName: 'Ramesh Jewellers Pvt Ltd',
+            ifsc: '12345678901'
+        },
+        documents: ['PAN', 'GST', 'BANK'],
+        createdAt: '2024-01-01T10:00:00Z',
+        rejectionReason: null
+    },
+    {
+        id: 'v-002',
+        name: 'Gold Traders Inc',
+        email: 'traders@dgi.com',
+        businessName: 'Gold Traders Inc',
+        gstin: '27CCCCT5678R1ZX',
+        kycStatus: 'pending',
+        totalRevenue: 450000,
+        totalOrders: 8,
+        bankDetails: {
+            accountName: 'Gold Traders Inc',
+            ifsc: '98765432101'
+        },
+        documents: ['PAN', 'GST'],
+        createdAt: '2024-01-10T14:30:00Z',
+        rejectionReason: null
     }
 ];
 
@@ -210,8 +255,8 @@ const dummyNotifications = {
 
 export const DataProvider = ({ children }) => {
     const { isAuthenticated, user } = useAuth();
-    const [orders, setOrders] = useState([]);
-    const [products, setProducts] = useState([]);
+    const [orders, setOrders] = useState(dummyOrders);
+    const [products, setProducts] = useState(dummyProducts);
     const [vendors, setVendors] = useState(dummyVendors);
     const [holdings, setHoldings] = useState([]);
     const [addresses, setAddresses] = useState([]);
@@ -362,7 +407,7 @@ export const DataProvider = ({ children }) => {
         };
 
         loadData();
-    }, [isAuthenticated, user, fetchProducts, fetchOrders, fetchHoldings, fetchAddresses, fetchShipments, fetchMetalPrices]);
+    }, [isAuthenticated]);
 
     // Refresh data when authentication changes
     useEffect(() => {
@@ -371,7 +416,7 @@ export const DataProvider = ({ children }) => {
             fetchAddresses();
             fetchShipments();
         }
-    }, [isAuthenticated, fetchHoldings, fetchAddresses, fetchShipments]);
+    }, [isAuthenticated]);
 
     // Additional helper functions
     const getProductById = (id) => products.find(p => p.id === id);

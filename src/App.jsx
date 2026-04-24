@@ -37,6 +37,12 @@ import AllCustomers from './screens/superadmin/AllCustomers';
 import KycApprovals from './screens/superadmin/KycApprovals';
 import SuperAdminReports from './screens/superadmin/Reports';
 import SuperAdminVendors from './screens/superadmin/Vendors';
+import SuperAdminProfile from './screens/superadmin/Profile';
+import SuperAdminSettings from './screens/superadmin/Settings';
+
+// Profile Components
+import VendorProfile from './screens/vendor/Profile';
+import VendorSettings from './screens/vendor/Settings';
 
 function App() {
   return (
@@ -123,20 +129,52 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/superadmin/profile"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <SuperAdminProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/settings"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <SuperAdminSettings />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Vendor Routes */}
             <Route
               path="/vendor/dashboard"
               element={
-                <ProtectedRoute allowedRoles={['vendor', 'VENDOR']}>
+                <ProtectedRoute allowedRoles={['vendor', 'VENDOR', 'vendor_owner']}>
                   <VendorDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vendor/profile"
+              element={
+                <ProtectedRoute allowedRoles={['vendor', 'VENDOR', 'vendor_owner']}>
+                  <VendorProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vendor/settings"
+              element={
+                <ProtectedRoute allowedRoles={['vendor', 'VENDOR', 'vendor_owner']}>
+                  <VendorSettings />
                 </ProtectedRoute>
               }
             />
             <Route
               path="/wallet"
               element={
-                <ProtectedRoute allowedRoles={['vendor', 'VENDOR']}>
+                <ProtectedRoute allowedRoles={['vendor', 'VENDOR', 'vendor_owner']}>
                   <WalletPage />
                 </ProtectedRoute>
               }

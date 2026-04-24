@@ -7,6 +7,15 @@ const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
 
+    // Debug logging
+    console.log('🔒 RoleProtectedRoute:', {
+        path: location.pathname,
+        user: user?.email,
+        role: user?.role,
+        allowedRoles,
+        loading
+    });
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -20,18 +29,23 @@ const RoleProtectedRoute = ({ children, allowedRoles = [] }) => {
 
     if (!user) {
         return <Navigate to="/signin" state={{ from: location }} replace />;
-    }
+    }   
 
+    const userRole = user.role?.toLowerCase() || '';
+
+    // If allowedRoles specified, check if user has permission
     if (allowedRoles.length > 0) {
-        const userRole = user.role?.toLowerCase() || '';
         const normalizedAllowedRoles = allowedRoles.map(role => role.toLowerCase());
 
-        if (!normalizedAllowedRoles.includes(userRole)) {
-            // Redirect to appropriate dashboard based on role
-            const redirectPath = userRole === 'superadmin' || userRole === 'super_admin'
-                ? '/superadmin/dashboard'
-                : '/vendor/dashboard';
-            return <Navigate to={redirectPath} replace />;
+        // Check if user role matches allowed roles
+        // For vendor routes: accept 'vendor', 'VENDOR', 'vendor_owner', 'VENDOR_OPERATIONS', and other vendor staff roles
+        const isAllowed = normalizedAllowedRoles.includes(userRole) ||
+            (normalizedAllowedRoles.includes('vendor') && (userRole === 'vendor_owner' || userRole === 'vendor_operations')) ||
+            (normalizedAllowedRoles.includes('superadmin') && (userRole === 'superadmin' || userRole === 'super_admin'));
+
+        if (!isAllowed) {
+            // Redirect to signin if not authorized
+            return <Navigate to="/signin" state={{ from: location }} replace />;
         }
     }
 

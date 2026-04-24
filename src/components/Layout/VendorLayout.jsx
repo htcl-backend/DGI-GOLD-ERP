@@ -11,5 +11,6 @@ export const vendorNavItems = [
     { key: "deliveries", label: "Deliveries", path: "/delivery" },
     { key: "kyc", label: "My KYC", path: "/kyc" },
     { key: "notifications", label: "Notifications", path: "/notifications" },
-    { key: "settings", label: "Settings", path: "/settings" },
+    { key: "profile", label: "Profile", path: "/vendor/profile" },
+    { key: "settings", label: "Settings", path: "/vendor/settings" },
 ];

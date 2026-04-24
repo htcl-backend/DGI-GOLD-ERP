@@ -110,7 +110,7 @@ const Profile = () => {
                             {/* Holdings Section */}
                             <section className="mt-8">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Your Holdings</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                     {/* Gold Card */}
                                     <div className="p-5 rounded-lg border border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
                                         <div className="flex items-center justify-between mb-4">

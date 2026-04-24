@@ -310,7 +310,7 @@ const Settings = () => {
                       {/* Profile Form */}
                       <div className="md:w-2/3">
                         <form onSubmit={handleProfileSubmit} className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Full Name *
@@ -624,7 +624,7 @@ const Settings = () => {
                           Add Category
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                         {categories.map((cat, index) => (
                           <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
                             <span>{cat}</span>

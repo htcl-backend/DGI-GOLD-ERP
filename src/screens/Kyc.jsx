@@ -185,7 +185,7 @@ const Kyc = () => {
                             <fieldset disabled={!isEditable} className="space-y-6">
                                 <div>
                                     <h2 className="text-xl font-semibold text-gray-900 border-b pb-2">1. Vendor Details</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mt-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700">Company Name</label>
                                             <input type="text" name="businessName" value={formData.businessName} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 sm:text-sm" />
@@ -204,7 +204,7 @@ const Kyc = () => {
                                 {/* Section 2: Bank Details */}
                                 <div>
                                     <h2 className="text-xl font-semibold text-gray-900 border-b pb-2">2. Bank Details</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mt-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700">Bank Account Name</label>
                                             <input type="text" name="accountName" value={formData.bankDetails.accountName} onChange={handleBankDetailsChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 sm:text-sm" />
@@ -223,7 +223,7 @@ const Kyc = () => {
                                 {/* Section 3: Document Upload */}
                                 <div>
                                     <h2 className="text-xl font-semibold text-gray-900 border-b pb-2">3. Document Upload</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mt-4">
                                         <FileInput name="pan" label="PAN Card" />
                                         <FileInput name="gst" label="GST Certificate" />
                                         <FileInput name="cheque" label="Cancelled Cheque" />

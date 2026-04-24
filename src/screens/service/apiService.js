@@ -1,4 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://161.248.62.37:7527/api/v1';
+// Use relative path for proxy in development, full URL in production
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+
+console.log('🔧 API Service Initialized with BASE URL:', API_BASE_URL);
 
 class APIService {
     constructor() {
@@ -33,7 +36,14 @@ class APIService {
                 options.body = isFormData ? body : JSON.stringify(body);
             }
 
+            // ✅ Increase timeout to 60 seconds for remote API server
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 60000);
+            options.signal = controller.signal;
+
             const response = await fetch(url, options);
+            clearTimeout(timeout);
+
             const data = await response.json().catch(() => null);
 
             if (!response.ok) {
@@ -42,6 +52,11 @@ class APIService {
 
             return { success: true, data, status: response.status };
         } catch (error) {
+            // ✅ Better error handling for network issues
+            if (error.name === 'AbortError') {
+                console.error(`API Timeout [${method} ${endpoint}]: Request took too long`);
+                return { success: false, error: 'API Timeout - Server not responding', status: null };
+            }
             console.error(`API Error [${method} ${endpoint}]:`, error);
             return { success: false, error: error.message, status: null };
         }
@@ -49,13 +64,39 @@ class APIService {
 
     // ============== AUTHENTICATION APIs ==============
     auth = {
-
         register: (payload) => this.request('/auth/register', 'POST', payload),
         login: (payload) => this.request('/auth/login', 'POST', payload),
+
+        // ✅ Vendor-specific login endpoint
+        vendorLogin: (payload) => this.request('/auth/vendor/login', 'POST', payload),
+
         logout: () => this.request('/auth/logout', 'POST'),
         getProfile: () => this.request('/auth/profile', 'GET'),
         updateProfile: (payload) => this.request('/auth/profile', 'PATCH', payload),
         changePassword: (payload) => this.request('/auth/change-password', 'PATCH', payload),
+    };
+
+    // ============== VENDOR & STAFF APIs ==============
+    vendor = {
+        // Vendor profile
+        getProfile: () => this.request('/vendor/profile', 'GET'),
+        updateProfile: (payload) => this.request('/vendor/profile', 'PATCH', payload),
+        changePassword: (payload) => this.request('/vendor/change-password', 'POST', payload),
+        refreshToken: () => this.request('/vendor/refresh-token', 'POST'),
+        logoutAll: () => this.request('/vendor/logout-all', 'POST'),
+        googleLogin: (payload) => this.request('/vendor/google-login', 'POST', payload),
+
+        // Staff management
+        getStaffList: (vendorId, params = {}) => this.request(`/auth/vendors/${vendorId}/staff?${new URLSearchParams(params)}`, 'GET'),
+        addStaff: (vendorId, payload) => this.request(`/auth/vendors/${vendorId}/staff`, 'POST', payload),
+        getStaffById: (vendorId, staffId) => this.request(`/auth/vendors/${vendorId}/staff/${staffId}`, 'GET'),
+        updateStaff: (vendorId, staffId, payload) => this.request(`/auth/vendors/${vendorId}/staff/${staffId}`, 'PUT', payload),
+        deleteStaff: (vendorId, staffId) => this.request(`/auth/vendors/${vendorId}/staff/${staffId}`, 'DELETE'),
+        updateStaffRole: (vendorId, staffId, payload) => this.request(`/auth/vendors/${vendorId}/staff/${staffId}/role`, 'PUT', payload),
+        blockStaff: (vendorId, staffId) => this.request(`/auth/vendors/${vendorId}/staff/${staffId}/block`, 'POST'),
+        resetStaffPassword: (vendorId, staffId) => this.request(`/auth/vendors/${vendorId}/staff/${staffId}/reset-password`, 'POST'),
+        getStaffActivity: (vendorId, staffId, params = {}) => this.request(`/auth/vendors/${vendorId}/staff/${staffId}/activity?${new URLSearchParams(params)}`, 'GET'),
+        seek: (params = {}) => this.request(`/auth/seek?${new URLSearchParams(params)}`, 'GET'),
     };
 
     // ============== METALS APIs ==============
@@ -75,8 +116,23 @@ class APIService {
 
     // ============== PRODUCTS APIs ==============
     products = {
-        getAll: () => this.request('/products', 'GET'),
+        getAll: (params = {}) => this.request(`/products?${new URLSearchParams(params)}`, 'GET'),
         getById: (productId) => this.request(`/products/${productId}`, 'GET'),
+        create: (payload) => this.request('/products', 'POST', payload),
+        update: (productId, payload) => this.request(`/products/${productId}`, 'PUT', payload),
+        delete: (productId) => this.request(`/products/${productId}`, 'DELETE'),
+        getPricingValues: (productId) => this.request(`/products/${productId}/pricing-values`, 'GET'),
+        getPricePreview: (productId) => this.request(`/products/${productId}/price-preview`, 'GET'),
+    };
+
+    // ============== CATEGORIES APIs ==============
+    categories = {
+        create: (payload) => this.request('/categories', 'POST', payload),
+        getAll: (params = {}) => this.request(`/categories?${new URLSearchParams(params)}`, 'GET'),
+        getById: (categoryId) => this.request(`/categories/${categoryId}`, 'GET'),
+        update: (categoryId, payload) => this.request(`/categories/${categoryId}`, 'PUT', payload),
+        delete: (categoryId) => this.request(`/categories/${categoryId}`, 'DELETE'),
+        getActivePublic: () => this.request('/categories/public/active', 'GET'),
     };
 
     // ============== ORDERS APIs ==============
@@ -89,6 +145,7 @@ class APIService {
         redeemOrder: (payload) => this.request('/orders/redeem', 'POST', payload),
         cancelOrder: (orderId) => this.request(`/orders/${orderId}/cancel`, 'POST'),
         getSummary: () => this.request('/orders/reports/summary', 'GET'),
+        getTransactions: (params = {}) => this.request(`/orders/reports/transactions?${new URLSearchParams(params)}`, 'GET'),
     };
 
     // ============== PAYMENTS APIs ==============
@@ -102,6 +159,29 @@ class APIService {
         getSummary: () => this.request('/holdings/summary', 'GET'),
         getLedger: () => this.request('/holdings/ledger', 'GET'),
         getByMetal: () => this.request('/holdings/breakdown-metal', 'GET'),
+    };
+
+    // ============== WALLET APIs ==============
+    wallet = {
+        getBalance: () => this.request('/wallet/balance', 'GET'),
+        getTransactions: (params = {}) => this.request(`/wallet/transactions?${new URLSearchParams(params)}`, 'GET'),
+        initiateDeposit: (payload) => this.request('/wallet/deposit/initiate', 'POST', payload),
+        completeDeposit: (transactionId, payload) => this.request(`/wallet/deposit/${transactionId}/complete`, 'POST', payload),
+        requestWithdrawal: (payload) => this.request('/wallet/withdraw/request', 'POST', payload),
+        completeWithdrawal: (transactionId, payload) => this.request(`/wallet/withdraw/${transactionId}/complete`, 'POST', payload),
+    };
+
+    // ============== ANALYTICS APIs ==============
+    analytics = {
+        vendor: {
+            getCustomerPnl: (customerId) => this.request(`/analytics/vendor/customer/${customerId}/pnl`, 'GET'),
+            getCustomerMetrics: (customerId) => this.request(`/analytics/vendor/customer/${customerId}/metrics`, 'GET'),
+            getCustomerLtv: (customerId) => this.request(`/analytics/vendor/customer/${customerId}/ltv`, 'GET'),
+            getCustomerSegmentation: (params = {}) => this.request(`/analytics/vendor/customers/segmentation?${new URLSearchParams(params)}`, 'GET'),
+            getMonthlyPnl: (params = {}) => this.request(`/analytics/vendor/monthly-pnl?${new URLSearchParams(params)}`, 'GET'),
+            getComprehensiveReport: () => this.request('/analytics/vendor/reports/comprehensive', 'GET'),
+            getAllCustomersLtv: (params = {}) => this.request(`/analytics/vendor/ltv/all?${new URLSearchParams(params)}`, 'GET'),
+        }
     };
 
     // ============== DELIVERY APIs ==============

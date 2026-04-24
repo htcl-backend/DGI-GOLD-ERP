@@ -136,7 +136,7 @@ const Vendors = () => {
                             <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Unknown: {kycSummary.unknown}</span>
                         </div>
 
-                        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                             <input
                                 value={searchText}
                                 onChange={(e) => setSearchText(e.target.value)}
@@ -169,7 +169,7 @@ const Vendors = () => {
                                 <h2 className="text-xl font-semibold mb-4">
                                     {editingVendor ? 'Edit Vendor' : 'Add New Vendor'}
                                 </h2>
-                                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                                         <input

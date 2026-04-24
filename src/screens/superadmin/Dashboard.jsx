@@ -160,9 +160,9 @@ const SuperAdminDashboard = () => {
             <Sidebar />
             <div className="flex-1 ml-[290px] overflow-x-hidden">
                 <Header />
-                <div className="p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
+                <div className="p-4 sm:p-6 lg:p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-7xl mx-auto">
-                        <h1 className="text-3xl font-bold text-gray-800 mb-6">Super Admin Dashboard</h1>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">Super Admin Dashboard</h1>
                         {/* <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-center mb-4">
                             <p className="text-xs text-amber-600 font-medium">Live Gold Rate</p>
                             <p className="text-lg font-bold text-amber-700">₹{currentGoldRate24K.toLocaleString()}<span className="text-xs font-normal">/g 24K</span></p>
@@ -172,7 +172,7 @@ const SuperAdminDashboard = () => {
 
 
                         {/* Overview Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5 mb-8">
                             {metrics.map((metric, index) => (
                                 <OverviewCard
                                     icon={metric.icon}
@@ -189,22 +189,22 @@ const SuperAdminDashboard = () => {
                             <GoldPriceDashboard />
                         </div>
                         {/* Charts Grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                            <div className="bg-white rounded-lg card-shadow p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Revenue</h3>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-8">
+                            <div className="bg-white rounded-lg card-shadow p-4 sm:p-6">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Monthly Revenue</h3>
                                 <Line data={monthlyRevenueData} options={{
                                     responsive: true,
                                     plugins: { legend: { display: false } }
                                 }} />
                             </div>
 
-                            <div className="bg-white rounded-lg card-shadow p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Status Distribution</h3>
+                            <div className="bg-white rounded-lg card-shadow p-4 sm:p-6">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Order Status Distribution</h3>
                                 <Doughnut data={orderStatusData} />
                             </div>
 
-                            <div className="bg-white rounded-lg card-shadow p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Vendors by Revenue</h3>
+                            <div className="bg-white rounded-lg card-shadow p-4 sm:p-6 lg:col-span-2">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Top Vendors by Revenue</h3>
                                 <Bar data={topVendorsData} options={{
                                     responsive: true,
                                     plugins: { legend: { display: false } }
@@ -213,29 +213,29 @@ const SuperAdminDashboard = () => {
                         </div>
 
                         {/* Recent Orders */}
-                        <div className="bg-white rounded-lg card-shadow p-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Orders (All Vendors)</h3>
+                        <div className="bg-white rounded-lg card-shadow p-4 sm:p-6">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Recent Orders (All Vendors)</h3>
                             <div className="overflow-x-auto">
-                                <table className="w-full">
+                                <table className="w-full text-sm sm:text-base">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+                                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Vendor</th>
+                                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Customer</th>
+                                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Product</th>
+                                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                            <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
                                         {allOrders.slice(0, 5).map((order) => (
-                                            <tr key={order.id} className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900">{order.id}</td>
-                                                <td className="px-4 py-3 text-sm text-gray-900">{order.vendorName}</td>
-                                                <td className="px-4 py-3 text-sm text-gray-900">{order.customerName}</td>
-                                                <td className="px-4 py-3 text-sm text-gray-900">{order.productName}</td>
-                                                <td className="px-4 py-3 text-sm text-gray-900 font-medium">₹{order.totalPrice.toLocaleString('en-IN')}</td>
-                                                <td className="px-4 py-3 text-sm">
+                                            <tr key={order.id} className="hover:bg-gray-50 text-xs sm:text-sm">
+                                                <td className="px-3 sm:px-4 py-3 font-medium text-gray-900">{order.id}</td>
+                                                <td className="px-3 sm:px-4 py-3 text-gray-900 hidden sm:table-cell">{order.vendorName}</td>
+                                                <td className="px-3 sm:px-4 py-3 text-gray-900 hidden md:table-cell">{order.customerName}</td>
+                                                <td className="px-3 sm:px-4 py-3 text-gray-900 hidden lg:table-cell">{order.productName}</td>
+                                                <td className="px-3 sm:px-4 py-3 font-medium text-gray-900">₹{order.totalPrice.toLocaleString('en-IN')}</td>
+                                                <td className="px-3 sm:px-4 py-3">
                                                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
                                                         {order.status}
                                                     </span>

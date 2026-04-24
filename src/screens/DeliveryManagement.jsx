@@ -12,57 +12,49 @@ const DeliveryManagement = () => {
 
     const fetchDeliveries = async () => {
         try {
-            // Static mock data for deliveries
+            // Static mock data for deliveries - aligned with JSX usage
             const mockDeliveries = [
                 {
-                    id: 1,
+                    _id: "1",
                     orderNumber: "ORD-001",
                     customerName: "Rajesh Kumar",
-                    customerPhone: "+91-9876543210",
-                    goldWeight: 25.5,
-                    goldPurity: "24K",
-                    totalAmount: 165750,
-                    orderDate: "2024-01-15",
-                    deliveryDate: "2024-01-18",
+                    material: "Gold 24K",
+                    weight: 25.5,
+                    date: "2024-01-18",
+                    delivered: true,
                     status: "Delivered",
                     address: "123 MG Road, Bangalore, Karnataka 560001"
                 },
                 {
-                    id: 2,
+                    _id: "2",
                     orderNumber: "ORD-002",
                     customerName: "Priya Sharma",
-                    customerPhone: "+91-9876543211",
-                    goldWeight: 15.2,
-                    goldPurity: "22K",
-                    totalAmount: 88280,
-                    orderDate: "2024-01-16",
-                    deliveryDate: "2024-01-20",
+                    material: "Gold 22K",
+                    weight: 15.2,
+                    date: "2024-01-20",
+                    delivered: false,
                     status: "In Transit",
                     address: "456 Brigade Road, Bangalore, Karnataka 560025"
                 },
                 {
-                    id: 3,
+                    _id: "3",
                     orderNumber: "ORD-003",
                     customerName: "Amit Singh",
-                    customerPhone: "+91-9876543212",
-                    goldWeight: 30.0,
-                    goldPurity: "18K",
-                    totalAmount: 135000,
-                    orderDate: "2024-01-17",
-                    deliveryDate: "2024-01-22",
+                    material: "Gold 18K",
+                    weight: 30.0,
+                    date: "2024-01-22",
+                    delivered: false,
                     status: "Out for Delivery",
                     address: "789 Commercial Street, Bangalore, Karnataka 560001"
                 },
                 {
-                    id: 4,
+                    _id: "4",
                     orderNumber: "ORD-004",
                     customerName: "Sneha Patel",
-                    customerPhone: "+91-9876543213",
-                    goldWeight: 10.8,
-                    goldPurity: "24K",
-                    totalAmount: 70200,
-                    orderDate: "2024-01-18",
-                    deliveryDate: "2024-01-25",
+                    material: "Gold 24K",
+                    weight: 10.8,
+                    date: "2024-01-25",
+                    delivered: false,
                     status: "Pending",
                     address: "321 Residency Road, Bangalore, Karnataka 560025"
                 }
@@ -76,12 +68,12 @@ const DeliveryManagement = () => {
         }
     };
 
-    const updateDeliveryStatus = async (id, status) => {
+    const updateDeliveryStatus = async (id, delivered) => {
         try {
             // Update local state instead of API call
             setDeliveries(prevDeliveries =>
                 prevDeliveries.map(delivery =>
-                    delivery.id === id ? { ...delivery, status } : delivery
+                    delivery._id === id ? { ...delivery, delivered, status: delivered ? "Delivered" : "Pending" } : delivery
                 )
             );
         } catch (error) {

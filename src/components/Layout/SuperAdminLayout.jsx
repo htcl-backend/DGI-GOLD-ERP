@@ -6,5 +6,6 @@ export const superAdminNavItems = [
     { key: "orders", label: "All Orders", path: "/superadmin/all-orders" },
     { key: "customers", label: "All Customers", path: "/superadmin/all-customers" },
     { key: "reports", label: "Reports", path: "/superadmin/reports" },
-    { key: "settings", label: "Settings", path: "/settings" },
+    { key: "profile", label: "Profile", path: "/superadmin/profile" },
+    { key: "settings", label: "Settings", path: "/superadmin/settings" },
 ];

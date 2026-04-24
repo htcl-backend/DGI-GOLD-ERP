@@ -11,7 +11,6 @@ import { Link } from "react-router-dom";
 import { HeaderContext } from "../Contexts/HeaderContext";
 import { IoMdPin } from "react-icons/io";
 import { vendorNavItems } from "./Layout/VendorLayout";
-import { superAdminNavItems } from "./Layout/SuperAdminLayout";
 
 const SidebarNew = () => {
     const { selected, setSelected } = useContext(HeaderContext);
@@ -20,19 +19,8 @@ const SidebarNew = () => {
         setSelected(status);
     };
 
-    const getUserRole = () => {
-        const storedUser = localStorage.getItem("user");
-        if (!storedUser) return "vendor";
-        try {
-            const user = JSON.parse(storedUser);
-            return (user.role || "vendor").toLowerCase();
-        } catch {
-            return "vendor";
-        }
-    };
-
-    const role = getUserRole();
-    const navItems = role === "superadmin" ? superAdminNavItems : vendorNavItems;
+    // ✅ Always use vendor nav items - super admin role is hidden
+    const navItems = vendorNavItems;
 
     const iconMap = {
         dashboard: <RxDashboard />,
