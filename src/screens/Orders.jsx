@@ -305,7 +305,11 @@ const Orders = () => {
                       <p className="text-xs md:text-sm text-gray-500 mt-2">Total Orders: {orders.length}</p>
                     </div>
 
-                    {filteredOrders.length > 0 ? (
+                    {filteredOrders.length     
+                    
+                    
+                    
+                    > 0 ? (
                       <>
                         {/* Desktop Table View */}
                         <div className="hidden md:block overflow-x-auto">
