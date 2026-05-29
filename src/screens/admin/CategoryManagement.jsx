@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import { FaList, FaPlus, FaEdit, FaTrash, FaSpinner, FaSearch, FaTimes, FaSave } from 'react-icons/fa';
-import { toast } from 'react-toastify';
 import apiService from '../service/apiService';
 
 const CategoryManagement = () => {
@@ -52,11 +51,11 @@ const CategoryManagement = () => {
                 setTotalPages(catData?.totalPages || 1);
                 console.log('✅ Categories loaded:', catList.length);
             } else {
-                toast.error('Failed to load categories');
+                alert('Failed to load categories');
             }
         } catch (error) {
             console.error('🔴 Error fetching categories:', error);
-            toast.error('Error loading categories');
+            alert('Error loading categories');
         } finally {
             setLoading(false);
         }
@@ -75,7 +74,7 @@ const CategoryManagement = () => {
     // ✅ Create category (POST /categories)
     const handleCreateCategory = async () => {
         if (!formData.name || !formData.slug) {
-            toast.error('Name and slug are required');
+            alert('Name and slug are required');
             return;
         }
 
@@ -87,16 +86,16 @@ const CategoryManagement = () => {
             console.log('📍 Create Response:', result);
 
             if (result.success) {
-                toast.success('✅ Category created successfully');
+                console.log('✅ Category created successfully');
                 setFormData({ name: '', slug: '', description: '', isActive: true });
                 setShowModal(false);
                 fetchCategories();
             } else {
-                toast.error(result.error || 'Failed to create category');
+                alert(result.error || 'Failed to create category');
             }
         } catch (error) {
             console.error('🔴 Error creating category:', error);
-            toast.error('Error creating category');
+            alert('Error creating category');
         } finally {
             setActionLoading(false);
         }
@@ -105,7 +104,7 @@ const CategoryManagement = () => {
     // ✅ Update category (PUT /categories/{id})
     const handleUpdateCategory = async () => {
         if (!formData.name || !formData.slug) {
-            toast.error('Name and slug are required');
+            alert('Name and slug are required');
             return;
         }
 
@@ -117,17 +116,17 @@ const CategoryManagement = () => {
             console.log('📍 Update Response:', result);
 
             if (result.success) {
-                toast.success('✅ Category updated successfully');
+                console.log('✅ Category updated successfully');
                 setFormData({ name: '', slug: '', description: '', isActive: true });
                 setShowModal(false);
                 setEditingCategory(null);
                 fetchCategories();
             } else {
-                toast.error(result.error || 'Failed to update category');
+                alert(result.error || 'Failed to update category');
             }
         } catch (error) {
             console.error('🔴 Error updating category:', error);
-            toast.error('Error updating category');
+            alert('Error updating category');
         } finally {
             setActionLoading(false);
         }
@@ -147,14 +146,14 @@ const CategoryManagement = () => {
             console.log('📍 Delete Response:', result);
 
             if (result.success) {
-                toast.success('✅ Category deleted successfully');
+                console.log('✅ Category deleted successfully');
                 fetchCategories();
             } else {
-                toast.error(result.error || 'Failed to delete category');
+                alert(result.error || 'Failed to delete category');
             }
         } catch (error) {
             console.error('🔴 Error deleting category:', error);
-            toast.error('Error deleting category');
+            alert('Error deleting category');
         } finally {
             setActionLoading(false);
         }
@@ -174,11 +173,11 @@ const CategoryManagement = () => {
                 const catList = Array.isArray(catData) ? catData : catData?.categories || [];
                 setCategories(catList);
                 setFilteredCategories(catList);
-                toast.success('✅ Active categories loaded');
+                console.log('✅ Active categories loaded');
             }
         } catch (error) {
             console.error('🔴 Error fetching active categories:', error);
-            toast.error('Error loading active categories');
+            alert('Error loading active categories');
         } finally {
             setLoading(false);
         }
@@ -299,8 +298,8 @@ const CategoryManagement = () => {
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <span className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${category.isActive
-                                                                    ? 'bg-green-100 text-green-800'
-                                                                    : 'bg-red-100 text-red-800'
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : 'bg-red-100 text-red-800'
                                                                 }`}>
                                                                 {category.isActive ? '✓ Active' : '✗ Inactive'}
                                                             </span>

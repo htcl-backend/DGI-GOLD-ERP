@@ -183,13 +183,14 @@ const Reports = () => {
     };
 
     return (
-        <div className="flex min-h-screen">
+
+<div className="relative min-h-screen overflow-x-hidden bg-[#f8f4f0]">
             <Sidebar />
-            <div className="flex-1 ml-[290px] overflow-x-hidden">
+            <div className="flex-1 lg:ml-[290px] ml-0 overflow-x-hidden">
                 <Header />
-                <div className="p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="flex justify-between items-center mb-6">
+                <div className="p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-x-auto">
+                    <div className="max-w-7xl mx-auto overflow-x-hidden">
+                        <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
                             <div>
                                 <h1 className="text-3xl font-bold text-gray-800">Reports & Analytics</h1>
                                 <p className="text-gray-600 mt-2">Platform-wide business insights</p>
@@ -229,7 +230,7 @@ const Reports = () => {
                             </div>
                             <div className="bg-white rounded-lg shadow-md p-4 sm:p-5 lg:p-6">
                                 <div className="flex items-center">
-                                    <FaShoppingCart className="h-6 sm:h-8 w-6 sm:w-8 text-blue-600 mr-2 sm:mr-3 flex-shrink-0" />
+                                    <FaShoppingCart className="h-6 sm:h-8 w-6 sm:w-8 text-blue-600 mr-2 sm:mr-3 shrink-0" />
                                     <div className="min-w-0">
                                         <p className="text-xs sm:text-sm font-medium text-gray-600">Total Orders</p>
                                         <p className="text-lg sm:text-2xl font-bold text-gray-900">{metrics.totalOrders}</p>
@@ -238,7 +239,7 @@ const Reports = () => {
                             </div>
                             <div className="bg-white rounded-lg shadow-md p-4 sm:p-5 lg:p-6">
                                 <div className="flex items-center">
-                                    <FaUsers className="h-6 sm:h-8 w-6 sm:w-8 text-purple-600 mr-2 sm:mr-3 flex-shrink-0" />
+                                    <FaUsers className="h-6 sm:h-8 w-6 sm:w-8 text-purple-600 mr-2 sm:mr-3 shrink-0" />
                                     <div className="min-w-0">
                                         <p className="text-xs sm:text-sm font-medium text-gray-600">Active Customers</p>
                                         <p className="text-lg sm:text-2xl font-bold text-gray-900">{metrics.totalCustomers}</p>
@@ -247,7 +248,7 @@ const Reports = () => {
                             </div>
                             <div className="bg-white rounded-lg shadow-md p-4 sm:p-5 lg:p-6">
                                 <div className="flex items-center">
-                                    <FaChartBar className="h-6 sm:h-8 w-6 sm:w-8 text-amber-600 mr-2 sm:mr-3 flex-shrink-0" />
+                                    <FaChartBar className="h-6 sm:h-8 w-6 sm:w-8 text-amber-600 mr-2 sm:mr-3 shrink-0" />
                                     <div className="min-w-0">
                                         <p className="text-xs sm:text-sm font-medium text-gray-600">Avg Order Value</p>
                                         <p className="text-lg sm:text-2xl font-bold text-gray-900">
@@ -338,7 +339,7 @@ const Reports = () => {
                                     {revenueByVendor.slice(0, 5).map((vendor, index) => (
                                         <div key={vendor.vendor} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                             <div className="flex items-center">
-                                                <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center mr-3">
+                                                <div className="shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center mr-3">
                                                     <span className="text-sm font-medium text-amber-800">#{index + 1}</span>
                                                 </div>
                                                 <div>

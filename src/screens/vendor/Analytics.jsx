@@ -4,7 +4,6 @@ import Header from '../../components/Header';
 import { useAuth } from '../../Contexts/AuthContext';
 import { FaChartBar, FaUsers, FaTrendingUp, FaFilter, FaSpinner } from 'react-icons/fa';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
-import { toast } from 'react-toastify';
 import apiService from '../service/apiService';
 import {
     Chart as ChartJS,
@@ -164,10 +163,10 @@ const VendorAnalytics = () => {
                 comprehensiveReport: reportData,
             }));
 
-            toast.success('✅ Analytics loaded');
+            console.log('✅ Analytics loaded');
         } catch (error) {
             console.error('🔴 Error fetching analytics:', error);
-            toast.error('Failed to load analytics');
+            alert('Failed to load analytics');
         } finally {
             setLoading(false);
         }

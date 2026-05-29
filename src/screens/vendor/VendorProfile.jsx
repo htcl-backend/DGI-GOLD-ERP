@@ -3,7 +3,6 @@ import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import { useAuth } from '../../Contexts/AuthContext';
 import { FaUser, FaLock, FaEdit, FaSave, FaTimes, FaSpinner, FaGoogle, FaSignOutAlt } from 'react-icons/fa';
-import { toast } from 'react-toastify';
 import apiService from '../service/apiService';
 
 const VendorProfile = () => {
@@ -62,11 +61,11 @@ const VendorProfile = () => {
                     state: vendorData.state || '',
                     pincode: vendorData.pincode || '',
                 });
-                toast.success('✅ Profile loaded');
+                console.log('✅ Profile loaded');
             }
         } catch (error) {
             console.error('🔴 Error fetching profile:', error);
-            toast.error('Failed to load profile');
+            alert('Failed to load profile');
         } finally {
             setProfileLoading(false);
         }
@@ -75,7 +74,7 @@ const VendorProfile = () => {
     // ✅ Update vendor profile (PATCH /vendor/profile)
     const handleUpdateProfile = async () => {
         if (!profileData.name || !profileData.email) {
-            toast.error('Name and email are required');
+            alert('Name and email are required');
             return;
         }
 
@@ -87,35 +86,35 @@ const VendorProfile = () => {
             console.log('📍 Update Profile Response:', result);
 
             if (result.success) {
-                toast.success('✅ Profile updated successfully');
+                console.log('✅ Profile updated successfully');
                 setIsEditingProfile(false);
                 // Update auth context
                 await updateProfile(profileData);
             } else {
-                toast.error(result.error || 'Failed to update profile');
+                alert(result.error || 'Failed to update profile');
             }
         } catch (error) {
             console.error('🔴 Error updating profile:', error);
-            toast.error('Error updating profile');
+            alert('Error updating profile');
         } finally {
             setLoading(false);
         }
     };
 
-    // ✅ Change password (POST /vendor/change-password)
+    // ✅ Change password (PATCH /vendor/change-password)
     const handleChangePassword = async () => {
         if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-            toast.error('All password fields are required');
+            alert('All password fields are required');
             return;
         }
 
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            toast.error('New passwords do not match');
+            alert('New passwords do not match');
             return;
         }
 
         if (passwordData.newPassword.length < 6) {
-            toast.error('New password must be at least 6 characters');
+            alert('New password must be at least 6 characters');
             return;
         }
 
@@ -130,7 +129,7 @@ const VendorProfile = () => {
             console.log('📍 Change Password Response:', result);
 
             if (result.success) {
-                toast.success('✅ Password changed successfully');
+                console.log('✅ Password changed successfully');
                 setPasswordData({
                     currentPassword: '',
                     newPassword: '',
@@ -138,11 +137,11 @@ const VendorProfile = () => {
                 });
                 setActiveTab('profile');
             } else {
-                toast.error(result.error || 'Failed to change password');
+                alert(result.error || 'Failed to change password');
             }
         } catch (error) {
             console.error('🔴 Error changing password:', error);
-            toast.error('Error changing password');
+            alert('Error changing password');
         } finally {
             setLoading(false);
         }
@@ -161,14 +160,37 @@ const VendorProfile = () => {
                 const newToken = result.data?.data?.token || result.data?.token;
                 if (newToken) {
                     localStorage.setItem('token', newToken);
-                    toast.success('✅ Token refreshed');
+                    console.log('✅ Token refreshed');
                 }
             } else {
-                toast.error('Failed to refresh token');
+                alert('Failed to refresh token');
             }
         } catch (error) {
             console.error('🔴 Error refreshing token:', error);
-            toast.error('Error refreshing token');
+            alert('Error refreshing token');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ✅ Logout from current device (POST /vendor/logout)
+    const handleLogout = async () => {
+        try {
+            setLoading(true);
+            console.log('🚪 Logging out from current device...');
+
+            const result = await apiService.vendor.logout();
+            console.log('📍 Logout Response:', result);
+
+            if (result.success) {
+                console.log('✅ Logged out successfully');
+                await logout();
+            } else {
+                alert('Failed to logout');
+            }
+        } catch (error) {
+            console.error('🔴 Error logging out:', error);
+            alert('Error logging out');
         } finally {
             setLoading(false);
         }
@@ -188,14 +210,14 @@ const VendorProfile = () => {
             console.log('📍 Logout All Response:', result);
 
             if (result.success) {
-                toast.success('✅ Logged out from all devices');
+                console.log('✅ Logged out from all devices');
                 await logout();
             } else {
-                toast.error('Failed to logout');
+                alert('Failed to logout');
             }
         } catch (error) {
             console.error('🔴 Error logging out:', error);
-            toast.error('Error logging out');
+            alert('Error logging out');
         } finally {
             setLoading(false);
         }
@@ -215,13 +237,13 @@ const VendorProfile = () => {
             console.log('📍 Google Login Response:', result);
 
             if (result.success) {
-                toast.success('✅ Google authentication linked');
+                console.log('✅ Google authentication linked');
             } else {
-                toast.error(result.error || 'Failed to link Google account');
+                alert(result.error || 'Failed to link Google account');
             }
         } catch (error) {
             console.error('🔴 Error with Google login:', error);
-            toast.error('Error linking Google account');
+            alert('Error linking Google account');
         } finally {
             setLoading(false);
         }

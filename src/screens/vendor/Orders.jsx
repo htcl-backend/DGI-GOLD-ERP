@@ -1,70 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import { useAuth } from '../../Contexts/AuthContext';
-import { FaShoppingCart, FaFilter, FaDownload } from 'react-icons/fa';
+import { FaShoppingCart, FaFilter, FaDownload, FaSpinner } from 'react-icons/fa';
+import apiService from '../service/apiService';
 
 const VendorOrders = () => {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
-    const [orders, setOrders] = useState([
-        {
-            id: 'ORD-001',
-            date: '2024-04-23',
-            customer: 'Arjun Sharma',
-            email: 'arjun@email.com',
-            amount: 245000,
-            commodity: 'Gold 24K',
-            quantity: 37.5,
-            status: 'delivered',
-            payment: 'completed',
-        },
-        {
-            id: 'ORD-002',
-            date: '2024-04-22',
-            customer: 'Priya Patel',
-            email: 'priya@email.com',
-            amount: 189000,
-            commodity: 'Gold 22K',
-            quantity: 30.5,
-            status: 'processing',
-            payment: 'completed',
-        },
-        {
-            id: 'ORD-003',
-            date: '2024-04-21',
-            customer: 'Rahul Kumar',
-            email: 'rahul@email.com',
-            amount: 95000,
-            commodity: 'Silver 999',
-            quantity: 1220,
-            status: 'shipped',
-            payment: 'completed',
-        },
-        {
-            id: 'ORD-004',
-            date: '2024-04-20',
-            customer: 'Anjali Singh',
-            email: 'anjali@email.com',
-            amount: 325000,
-            commodity: 'Gold 24K',
-            quantity: 49.8,
-            status: 'pending',
-            payment: 'pending',
-        },
-        {
-            id: 'ORD-005',
-            date: '2024-04-19',
-            customer: 'Vikram Gupta',
-            email: 'vikram@email.com',
-            amount: 150000,
-            commodity: 'Silver 999',
-            quantity: 1923,
-            status: 'delivered',
-            payment: 'completed',
-        },
-    ]);
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, hasMore: false });
+
+    // ✅ FETCH VENDOR ORDERS from API
+    useEffect(() => {
+        fetchVendorOrders();
+    }, [pagination.page, filterStatus]);
+
+    const fetchVendorOrders = async () => {
+        setLoading(true);
+        try {
+            // ✅ GET /vendor/orders with filters and pagination
+            const result = await apiService.vendor.orders.getAll({
+                page: pagination.page,
+                limit: pagination.limit,
+                status: filterStatus !== 'all' ? filterStatus.toUpperCase() : undefined,
+            });
+
+            if (result.success && result.data) {
+                const orderData = result.data.data || result.data;
+                setOrders(orderData.orders || []);
+                setPagination({
+                    page: orderData.page || pagination.page,
+                    limit: orderData.limit || pagination.limit,
+                    total: orderData.total || 0,
+                    hasMore: orderData.hasMore || false,
+                });
+                console.log(`✅ Loaded ${(orderData.orders || []).length} orders`);
+            } else {
+                throw new Error(result.error || 'Failed to fetch orders');
+            }
+        } catch (err) {
+            console.error('🔴 Error fetching vendor orders:', err);
+            alert(err.message || 'Failed to load orders');
+            // Fallback to empty state
+            setOrders([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const statusColors = {
         pending: 'text-orange-700 bg-orange-100',
@@ -72,41 +57,51 @@ const VendorOrders = () => {
         shipped: 'text-yellow-700 bg-yellow-100',
         delivered: 'text-green-700 bg-green-100',
         cancelled: 'text-red-700 bg-red-100',
+        PENDING: 'text-orange-700 bg-orange-100',
+        PROCESSING: 'text-blue-700 bg-blue-100',
+        SHIPPED: 'text-yellow-700 bg-yellow-100',
+        DELIVERED: 'text-green-700 bg-green-100',
+        CANCELLED: 'text-red-700 bg-red-100',
     };
 
     const paymentColors = {
         pending: 'text-orange-700 bg-orange-100',
         completed: 'text-green-700 bg-green-100',
         failed: 'text-red-700 bg-red-100',
+        PENDING: 'text-orange-700 bg-orange-100',
+        COMPLETED: 'text-green-700 bg-green-100',
+        FAILED: 'text-red-700 bg-red-100',
     };
 
     const filteredOrders = filterStatus === 'all'
         ? orders
-        : orders.filter(order => order.status === filterStatus);
+        : orders.filter(order => (order.status || '').toLowerCase() === filterStatus);
 
     const stats = {
-        total: orders.length,
-        pending: orders.filter(o => o.status === 'pending').length,
-        processing: orders.filter(o => o.status === 'processing').length,
-        shipped: orders.filter(o => o.status === 'shipped').length,
-        delivered: orders.filter(o => o.status === 'delivered').length,
-        totalRevenue: orders.reduce((sum, o) => sum + o.amount, 0),
+        total: pagination.total || orders.length,
+        pending: orders.filter(o => (o.status || '').toLowerCase() === 'pending').length,
+        processing: orders.filter(o => (o.status || '').toLowerCase() === 'processing').length,
+        shipped: orders.filter(o => (o.status || '').toLowerCase() === 'shipped').length,
+        delivered: orders.filter(o => (o.status || '').toLowerCase() === 'delivered').length,
+        totalRevenue: orders.reduce((sum, o) => sum + (o.totalAmount || o.amount || 0), 0),
     };
 
     const handleExport = () => {
         const csv = [
-            ['Order ID', 'Date', 'Customer', 'Amount', 'Commodity', 'Quantity', 'Status', 'Payment'],
+            ['Order ID', 'Date', 'Customer', 'Email', 'Amount', 'Type', 'Metal', 'Quantity', 'Status', 'Payment'],
             ...orders.map(o => [
-                o.id,
-                o.date,
-                o.customer,
-                o.amount,
-                o.commodity,
-                o.quantity,
-                o.status,
-                o.payment,
+                o.orderId || o.id || '',
+                o.createdAt ? new Date(o.createdAt).toISOString().split('T')[0] : o.date || '',
+                o.customerName || o.customer || '',
+                o.email || '',
+                o.totalAmount || o.amount || 0,
+                o.type || '',
+                o.metal || o.commodity || '',
+                o.grams || o.quantity || 0,
+                o.status || '',
+                o.paymentStatus || o.payment || '',
             ])
-        ].map(row => row.join(',')).join('\n');
+        ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
 
         const element = document.createElement('a');
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv));
@@ -115,6 +110,7 @@ const VendorOrders = () => {
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
+        alert('✅ Orders exported successfully');
     };
 
     return (
@@ -128,151 +124,183 @@ const VendorOrders = () => {
                         <div className="mb-8 flex justify-between items-center">
                             <div>
                                 <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-                                    <FaShoppingCart className="text-blue-600" /> Orders
+                                    <FaShoppingCart className="text-blue-600" /> Vendor Orders
                                 </h1>
-                                <p className="text-gray-600 mt-2">View and manage all customer orders</p>
+                                <p className="text-gray-600 mt-2">View and manage all customer orders for your vendor</p>
                             </div>
                             <button
                                 onClick={handleExport}
-                                className="flex items-center gap-2 bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition"
+                                disabled={loading}
+                                className="flex items-center gap-2 bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition disabled:opacity-50"
                             >
                                 <FaDownload /> Export CSV
                             </button>
                         </div>
 
+                        {/* Loading State */}
+                        {loading && orders.length === 0 && (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="text-center">
+                                    <FaSpinner className="text-4xl text-blue-600 animate-spin mx-auto mb-4" />
+                                    <p className="text-gray-600">Loading vendor orders...</p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Stats */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                            <StatCard
-                                title="Total Orders"
-                                value={stats.total}
-                                icon="📦"
-                                color="bg-blue-50"
-                            />
-                            <StatCard
-                                title="Pending"
-                                value={stats.pending}
-                                icon="⏳"
-                                color="bg-orange-50"
-                            />
-                            <StatCard
-                                title="Processing"
-                                value={stats.processing}
-                                icon="🔄"
-                                color="bg-blue-50"
-                            />
-                            <StatCard
-                                title="Shipped"
-                                value={stats.shipped}
-                                icon="📮"
-                                color="bg-yellow-50"
-                            />
-                            <StatCard
-                                title="Delivered"
-                                value={stats.delivered}
-                                icon="✅"
-                                color="bg-green-50"
-                            />
-                            <StatCard
-                                title="Total Revenue"
-                                value={`₹${(stats.totalRevenue / 100000).toFixed(1)}L`}
-                                icon="💰"
-                                color="bg-purple-50"
-                            />
-                        </div>
+                        {!loading && orders.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                                <StatCard
+                                    title="Total Orders"
+                                    value={stats.total}
+                                    icon="📦"
+                                    color="bg-blue-50"
+                                />
+                                <StatCard
+                                    title="Pending"
+                                    value={stats.pending}
+                                    icon="⏳"
+                                    color="bg-orange-50"
+                                />
+                                <StatCard
+                                    title="Processing"
+                                    value={stats.processing}
+                                    icon="🔄"
+                                    color="bg-blue-50"
+                                />
+                                <StatCard
+                                    title="Shipped"
+                                    value={stats.shipped}
+                                    icon="📮"
+                                    color="bg-yellow-50"
+                                />
+                                <StatCard
+                                    title="Delivered"
+                                    value={stats.delivered}
+                                    icon="✅"
+                                    color="bg-green-50"
+                                />
+                                <StatCard
+                                    title="Total Revenue"
+                                    value={`₹${(stats.totalRevenue / 100000).toFixed(1)}L`}
+                                    icon="💰"
+                                    color="bg-purple-50"
+                                />
+                            </div>
+                        )}
 
                         {/* Filter */}
-                        <div className="mb-6 flex gap-2">
-                            <FaFilter className="text-gray-600 mt-3" />
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="all">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="processing">Processing</option>
-                                <option value="shipped">Shipped</option>
-                                <option value="delivered">Delivered</option>
-                                <option value="cancelled">Cancelled</option>
-                            </select>
-                        </div>
+                        {!loading && (
+                            <div className="mb-6 flex gap-2">
+                                <FaFilter className="text-gray-600 mt-3" />
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) => {
+                                        setFilterStatus(e.target.value);
+                                        setPagination({ ...pagination, page: 1 });
+                                    }}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="all">All Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="shipped">Shipped</option>
+                                    <option value="delivered">Delivered</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Empty State */}
+                        {!loading && orders.length === 0 && (
+                            <div className="bg-white rounded-lg p-12 text-center">
+                                <FaShoppingCart className="text-6xl text-gray-300 mx-auto mb-4" />
+                                <p className="text-xl text-gray-600 mb-2">No orders found</p>
+                                <p className="text-gray-500">There are no orders for your vendor yet.</p>
+                            </div>
+                        )}
 
                         {/* Orders Table */}
-                        <div className="bg-white rounded-lg card-shadow overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commodity</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {filteredOrders.map((order) => (
-                                            <tr key={order.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.id}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">{order.date}</td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm">
-                                                        <p className="font-medium text-gray-900">{order.customer}</p>
-                                                        <p className="text-gray-500">{order.email}</p>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">{order.commodity}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-900 font-medium">{order.quantity} g</td>
-                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                    ₹{order.amount.toLocaleString('en-IN')}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm">
-                                                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
-                                                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm">
-                                                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${paymentColors[order.payment]}`}>
-                                                        {order.payment.charAt(0).toUpperCase() + order.payment.slice(1)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm">
-                                                    <button
-                                                        onClick={() => alert(`View details for ${order.id}`)}
-                                                        className="text-blue-600 hover:text-blue-800 font-medium"
-                                                    >
-                                                        View
-                                                    </button>
-                                                </td>
+                        {!loading && orders.length > 0 && (
+                            <div className="bg-white rounded-lg card-shadow overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Metal</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grams</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200">
+                                            {filteredOrders.map((order) => (
+                                                <tr key={order.orderId || order.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.orderId || order.id}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-600">
+                                                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : order.date}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm">
+                                                            <p className="font-medium text-gray-900">{order.customerName || order.customer}</p>
+                                                            <p className="text-gray-500">{order.email}</p>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-600">{order.metal || order.commodity}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{order.grams || order.quantity} g</td>
+                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                                        ₹{(order.totalAmount || order.amount || 0).toLocaleString('en-IN')}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm">
+                                                        <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
+                                                            {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1).toLowerCase() : 'N/A'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm">
+                                                        <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${paymentColors[order.paymentStatus || order.payment]}`}>
+                                                            {order.paymentStatus || order.payment ? (order.paymentStatus || order.payment).charAt(0).toUpperCase() + (order.paymentStatus || order.payment).slice(1).toLowerCase() : 'N/A'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm">
+                                                        <button
+                                                            onClick={() => alert(`View details for ${order.orderId || order.id}`)}
+                                                            className="text-blue-600 hover:text-blue-800 font-medium"
+                                                        >
+                                                            View
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Summary */}
-                        <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <p className="text-sm text-gray-600 mb-2">Total Revenue</p>
-                                    <p className="text-3xl font-bold text-gray-900">
-                                        ₹{stats.totalRevenue.toLocaleString('en-IN')}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-600 mb-2">Average Order Value</p>
-                                    <p className="text-3xl font-bold text-gray-900">
-                                        ₹{(stats.totalRevenue / stats.total).toLocaleString('en-IN')}
-                                    </p>
+                        {!loading && orders.length > 0 && (
+                            <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <p className="text-sm text-gray-600 mb-2">Total Revenue</p>
+                                        <p className="text-3xl font-bold text-gray-900">
+                                            ₹{stats.totalRevenue.toLocaleString('en-IN')}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600 mb-2">Average Order Value</p>
+                                        <p className="text-3xl font-bold text-gray-900">
+                                            ₹{(stats.totalRevenue / stats.total).toLocaleString('en-IN')}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                     </div>
                 </div>
             </div>

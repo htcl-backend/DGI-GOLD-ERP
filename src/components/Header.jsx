@@ -2,16 +2,22 @@ import React, { useState } from "react";
 import { IoNotifications } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa6";
 import profileImg from "../assets/images/users/user-1.jpg";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useData } from "../Contexts/DataContext";
 import { useAuth } from "../Contexts/AuthContext";
+import { vendorNavItems } from "./Layout/VendorLayout";
 
 // Header component
 const Header = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State to control dropdown visibi....
   const { notifications } = useData();
   const { user } = useAuth();
+  const location = useLocation();
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Find the current nav item to get its label for the title
+  const currentNavItem = vendorNavItems.find(item => location.pathname.startsWith(item.path));
+  const pageTitle = currentNavItem ? currentNavItem.label : "Dashboard";
 
   // Toggle the dropdown menu when profile is clicke....
   const toggleDropdown = () => {
@@ -22,8 +28,7 @@ const Header = () => {
   return (
     <div className="flex-1">
       <div className="flex items-center justify-between h-[72px] header-shadow px-4">
-        <span className="text-2xl font-[700] text-[#cc7b25ff]">Dashboard</span>
-        {/* Shows Dashboard*/}
+        <span className="text-2xl font-[700] text-[#cc7b25ff]">{pageTitle}</span>
         <div className="flex items-center justify-center gap-4">
           <div>
             <ul className="text-gray-800">
@@ -61,19 +66,19 @@ const Header = () => {
                   <li
                     className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
                     onClick={() => {
-                      navigate("/settings");
+                      navigate("/vendor/profile");
                     }}
                   >
                     My Account
                   </li>
-                  <li
+                  {/* <li
                     className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
                     onClick={() => {
                       navigate("/signup");
                     }}
                   >
                     Add Account
-                  </li>
+                  </li> */}
                   <li
                     className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
                     onClick={() => {

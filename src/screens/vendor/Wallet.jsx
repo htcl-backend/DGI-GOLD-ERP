@@ -3,7 +3,6 @@ import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import { useAuth } from '../../Contexts/AuthContext';
 import { FaWallet, FaPlus, FaMinus, FaHistory, FaLock, FaUnlock, FaSpinner } from 'react-icons/fa';
-import { toast } from 'react-toastify';
 import apiService from '../service/apiService';
 
 const VendorWallet = () => {
@@ -79,7 +78,7 @@ const VendorWallet = () => {
             }
         } catch (error) {
             console.error('🔴 Error fetching wallet data:', error);
-            toast.error('Failed to load wallet data');
+            alert('Failed to load wallet data');
         } finally {
             setFetchingData(false);
         }
@@ -87,7 +86,7 @@ const VendorWallet = () => {
 
     const handleDeposit = async () => {
         if (!depositAmount || depositAmount <= 0) {
-            toast.error('Please enter valid amount');
+            alert('Please enter valid amount');
             return;
         }
 
@@ -106,18 +105,18 @@ const VendorWallet = () => {
             console.log('📍 Deposit Response:', result);
 
             if (result.success) {
-                toast.success(`✅ Deposit of ₹${depositAmount} initiated successfully!`);
+                console.log(`✅ Deposit of ₹${depositAmount} initiated successfully!`);
                 setDepositAmount('');
                 setShowDepositModal(false);
 
                 // Refresh wallet data
                 setTimeout(() => fetchWalletData(), 1000);
             } else {
-                toast.error(result.error || 'Failed to initiate deposit');
+                alert(result.error || 'Failed to initiate deposit');
             }
         } catch (error) {
             console.error('🔴 Deposit error:', error);
-            toast.error('Error processing deposit');
+            alert('Error processing deposit');
         } finally {
             setLoading(false);
         }
@@ -125,15 +124,15 @@ const VendorWallet = () => {
 
     const handleWithdraw = async () => {
         if (!withdrawAmount || withdrawAmount <= 0) {
-            toast.error('Please enter valid amount');
+            alert('Please enter valid amount');
             return;
         }
         if (withdrawAmount > walletData.available) {
-            toast.error('Insufficient available balance');
+            alert('Insufficient available balance');
             return;
         }
         if (!bankAccountId) {
-            toast.error('Please select or add bank account');
+            alert('Please select or add bank account');
             return;
         }
 
@@ -152,18 +151,18 @@ const VendorWallet = () => {
             console.log('📍 Withdrawal Response:', result);
 
             if (result.success) {
-                toast.success(`✅ Withdrawal of ₹${withdrawAmount} requested! Processing in 1-3 business days.`);
+                console.log(`✅ Withdrawal of ₹${withdrawAmount} requested! Processing in 1-3 business days.`);
                 setWithdrawAmount('');
                 setShowWithdrawModal(false);
 
                 // Refresh wallet data
                 setTimeout(() => fetchWalletData(), 1000);
             } else {
-                toast.error(result.error || 'Failed to request withdrawal');
+                alert(result.error || 'Failed to request withdrawal');
             }
         } catch (error) {
             console.error('🔴 Withdrawal error:', error);
-            toast.error('Error processing withdrawal');
+            alert('Error processing withdrawal');
         } finally {
             setLoading(false);
         }

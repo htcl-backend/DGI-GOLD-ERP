@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React from "react";
 import logo from "../assets/img/logo 2.svg";
 import { RxDashboard } from "react-icons/rx";
 import { HiNumberedList } from "react-icons/hi2";
@@ -8,17 +8,10 @@ import { PiUsersDuotone } from "react-icons/pi";
 import { MdOutlineCalendarViewWeek, MdOutlineDeliveryDining } from "react-icons/md";
 import { IoNotifications, IoSettings, IoShapesOutline, IoTrainSharp } from "react-icons/io5";
 import { NavLink } from "react-router-dom";
-import { HeaderContext } from "../Contexts/HeaderContext";
 import { IoMdPin } from "react-icons/io";
 import { vendorNavItems } from "./Layout/VendorLayout";
 
 const Sidebar = () => {
-  const { selected, setSelected } = useContext(HeaderContext);
-
-  const handleClick = (status) => {
-    setSelected(status);
-  };
-
   // ✅ Always show vendor nav items - super admin role is hidden
   const navItems = vendorNavItems;
 
@@ -28,6 +21,7 @@ const Sidebar = () => {
     orders: <HiNumberedList />,
     customers: <PiUsersDuotone />,
     products: <AiFillProduct />,
+    Reports: <FaFileAlt />,
     inventory: <MdOutlineCalendarViewWeek />,
     "buy-gold": <AiFillProduct />,
     "sell-gold": <AiFillProduct />,
@@ -53,7 +47,6 @@ const Sidebar = () => {
           className={({ isActive }) =>
             `flex items-center gap-2 px-6 py-2 mt-4 rounded-xl cursor-pointer ${isActive ? "text-amber-500 bg-[#edcda4]" : "hover:bg-gray-100"}`
           }
-          onClick={() => handleClick(item.key)}
         >
           {iconMap[item.key] || <IoShapesOutline />}
           <span>{item.label}</span>

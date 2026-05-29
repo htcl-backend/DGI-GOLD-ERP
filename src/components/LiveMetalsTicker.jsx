@@ -3,6 +3,8 @@ import { createChart } from 'lightweight-charts';
 import apiService from '../screens/service/apiService';
 
 const LiveMetalsTicker = () => {
+    const OUNCE_TO_GRAM = 31.1035; // Troy ounce to grams conversion factor
+
     const containerRef = useRef(null);
     const chartRef = useRef(null);
     const seriesRef = useRef(null);
@@ -76,44 +78,48 @@ const LiveMetalsTicker = () => {
                 // Fetch live price data
                 const result = await apiService.metals.getLivePrice();
                 console.log('📊 Live metals response:', result);
+                
+                // The API response is often nested, e.g., { success: true, data: { data: [...] } }
+                const apiData = result.data?.data || result.data;
 
-                if (result.success && result.data) {
-                    const { data } = result;
+                if (result.success && Array.isArray(apiData)) {
+                    const metals = apiData;
+                    const goldData = metals.find(m => m.metal === 'GOLD');
+                    const silverData = metals.find(m => m.metal === 'SILVER');
 
-                    // Handle response structure
-                    const goldData = data.gold || data.GOLD || {};
-                    const silverData = data.silver || data.SILVER || {};
-
-                    setGoldPrice({
-                        current: goldData.current || goldData.price || 0,
-                        change: goldData.change || 0,
-                        changePercent: goldData.changePercent || goldData.change_percent || 0,
-                    });
-
-                    setSilverPrice({
-                        current: silverData.current || silverData.price || 0,
-                        change: silverData.change || 0,
-                        changePercent: silverData.changePercent || silverData.change_percent || 0,
-                    });
-
-                    // Plot initial data on chart
-                    if (seriesRef.current && goldData.history) {
-                        const chartData = Array.isArray(goldData.history)
-                            ? goldData.history.map((point) => ({
-                                time: Math.floor(point.timestamp / 1000),
-                                value: point.price || point.current,
-                            }))
-                            : [];
-
-                        if (chartData.length > 0) {
-                            seriesRef.current.setData(chartData);
-                            if (chartRef.current) {
-                                chartRef.current.timeScale().fitContent();
-                            }
-                        }
+                    if (goldData) {
+                        const perGramChange = (goldData.rawdata?.ch || 0) / OUNCE_TO_GRAM;
+                        setGoldPrice({
+                            current: goldData.pricing?.perGram24k || 0,
+                            change: perGramChange,
+                            changePercent: goldData.rawdata?.chp || 0,
+                        });
                     }
-                }
 
+                    if (silverData) {
+                        const perGramChange = (silverData.rawdata?.ch || 0) / OUNCE_TO_GRAM;
+                        setSilverPrice({
+                            current: silverData.pricing?.perGram24k || 0,
+                            change: perGramChange,
+                            changePercent: silverData.rawdata?.chp || 0,
+                        });
+                    }
+
+                    // The new API response does not include a 'history' array for the chart.
+                    // The chart will be empty on initial load. It will update with live data if SSE is working.
+                    // To show historical data, a different API endpoint or logic would be needed.
+                    const initialChartData = activeTab === 'gold' ? goldData : silverData;
+                    if (seriesRef.current && initialChartData) {
+                        // Set a single initial point for the chart
+                        const initialPoint = {
+                            time: Math.floor(new Date(initialChartData.timestamp).getTime() / 1000),
+                            value: initialChartData.pricing?.perGram24k || 0,
+                        };
+                        seriesRef.current.setData([initialPoint]);
+                    }
+                } else {
+                    throw new Error("Received invalid data structure from API.");
+                }
                 setError('');
             } catch (err) {
                 console.error('❌ Error fetching metals data:', err);
@@ -209,34 +215,44 @@ const LiveMetalsTicker = () => {
     };
 
     const updatePricesFromData = (data) => {
-        if (data.gold) {
-            setGoldPrice({
-                current: data.gold.price || data.gold.current || 0,
-                change: data.gold.change || 0,
-                changePercent: data.gold.changePercent || data.gold.change_percent || 0,
-            });
+        const updates = Array.isArray(data) ? data : [data];
 
-            // Update chart with new data point
+        const goldUpdate = updates.find(d => d.metal === 'GOLD' || d.gold);
+        const silverUpdate = updates.find(d => d.metal === 'SILVER' || d.silver);
+
+        const goldData = goldUpdate?.gold || goldUpdate;
+        const silverData = silverUpdate?.silver || silverUpdate;
+
+        if (goldData) {
+            const perGramChange = (goldData.rawdata?.ch || 0) / OUNCE_TO_GRAM;
+            const newPrice = {
+                current: goldData.pricing?.perGram24k || 0,
+                change: perGramChange,
+                changePercent: goldData.rawdata?.chp || 0,
+            };
+            setGoldPrice(newPrice);
+
             if (seriesRef.current && activeTab === 'gold') {
                 seriesRef.current.update({
-                    time: Math.floor(Date.now() / 1000),
-                    value: data.gold.price || data.gold.current || 0,
+                    time: Math.floor(new Date(goldData.timestamp).getTime() / 1000),
+                    value: newPrice.current,
                 });
             }
         }
 
-        if (data.silver) {
-            setSilverPrice({
-                current: data.silver.price || data.silver.current || 0,
-                change: data.silver.change || 0,
-                changePercent: data.silver.changePercent || data.silver.change_percent || 0,
-            });
+        if (silverData) {
+            const perGramChange = (silverData.rawdata?.ch || 0) / OUNCE_TO_GRAM;
+            const newPrice = {
+                current: silverData.pricing?.perGram24k || 0,
+                change: perGramChange,
+                changePercent: silverData.rawdata?.chp || 0,
+            };
+            setSilverPrice(newPrice);
 
-            // Update chart with new data point
             if (seriesRef.current && activeTab === 'silver') {
                 seriesRef.current.update({
-                    time: Math.floor(Date.now() / 1000),
-                    value: data.silver.price || data.silver.current || 0,
+                    time: Math.floor(new Date(silverData.timestamp).getTime() / 1000),
+                    value: newPrice.current,
                 });
             }
         }
@@ -252,8 +268,9 @@ const LiveMetalsTicker = () => {
         pollingIntervalRef.current = setInterval(async () => {
             try {
                 const result = await apiService.metals.getLivePrice();
-                if (result.success && result.data) {
-                    updatePricesFromData(result.data);
+                const apiData = result.data?.data || result.data;
+                if (result.success && Array.isArray(apiData)) {
+                    updatePricesFromData(apiData);
                     setError('');
                 }
             } catch (err) {
@@ -265,27 +282,22 @@ const LiveMetalsTicker = () => {
     const updateChartData = async (metal) => {
         try {
             console.log(`📈 Updating chart data for ${metal}...`);
-            const result = await apiService.metals.getLivePrice();
+            // This function is called on tab switch. We can re-fetch, but the new API
+            // doesn't provide history. We will just set the chart to the single latest point.
+            // A better implementation would fetch a dedicated history endpoint.
+            const priceData = metal === 'gold' ? goldPrice : silverPrice;
+            if (seriesRef.current && priceData.current > 0) {
+                const point = {
+                    time: Math.floor(Date.now() / 1000),
+                    value: priceData.current,
+                };
+                seriesRef.current.setData([point]);
 
-            if (result.success && seriesRef.current) {
-                const metalData = metal === 'gold'
-                    ? (result.data.gold || result.data.GOLD || {})
-                    : (result.data.silver || result.data.SILVER || {});
-
-                if (metalData && metalData.history && Array.isArray(metalData.history)) {
-                    const chartData = metalData.history.map((point) => ({
-                        time: Math.floor(point.timestamp / 1000),
-                        value: point.price || point.current,
-                    }));
-
-                    if (chartData.length > 0) {
-                        seriesRef.current.setData(chartData);
-
-                        if (chartRef.current) {
-                            chartRef.current.timeScale().fitContent();
-                        }
-                    }
+                if (chartRef.current) {
+                    chartRef.current.timeScale().fitContent();
                 }
+            } else {
+                seriesRef.current.setData([]); // Clear chart if no data
             }
         } catch (err) {
             console.error('❌ Error updating chart data:', err);

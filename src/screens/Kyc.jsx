@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { useAuth } from '../Contexts/AuthContext';
-import { useData } from '../Contexts/DataContext';
 import { FaCheckCircle, FaClock, FaTimesCircle, FaUpload } from 'react-icons/fa';
+import toast from 'react-hot-toast';
+import apiService from './service/apiService';
 
 const Kyc = () => {
     const { user } = useAuth();
-    const { allVendors, updateVendor } = useData();
     const [vendorData, setVendorData] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         businessName: '',
         gstin: '',
@@ -27,21 +28,45 @@ const Kyc = () => {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Fetch vendor profile from API
     useEffect(() => {
-        if (user && allVendors.length > 0) {
-            const currentVendor = allVendors.find(v => v.id === user.id);
-            if (currentVendor) {
-                setVendorData(currentVendor);
-                setFormData({
-                    businessName: currentVendor.businessName || '',
-                    gstin: currentVendor.gstin || '',
-                    address: currentVendor.address || '', // Assuming address is a field
-                    bankDetails: currentVendor.bankDetails || { accountName: '', accountNumber: '', ifsc: '' },
-                    documents: { pan: null, gst: null, cheque: null, registration: null } // Reset file inputs
-                });
+        const fetchVendorProfile = async () => {
+            try {
+                setLoading(true);
+                console.log('🔄 Fetching vendor profile for KYC...');
+
+                const result = await apiService.vendor.getProfile();
+                console.log('📦 Vendor Profile Response:', result);
+
+                if (result.success && result.data) {
+                    const profileData = result.data.data || result.data;
+                    setVendorData(profileData);
+
+                    // Populate form with existing data
+                    setFormData({
+                        businessName: profileData.businessName || '',
+                        gstin: profileData.gstin || '',
+                        address: profileData.address || '',
+                        bankDetails: profileData.bankDetails || { accountName: '', accountNumber: '', ifsc: '' },
+                        documents: { pan: null, gst: null, cheque: null, registration: null }
+                    });
+                    console.log('✅ Vendor profile loaded');
+                } else {
+                    console.warn('⚠️ Failed to fetch vendor profile:', result.error);
+                    toast.error('Failed to load vendor profile');
+                }
+            } catch (error) {
+                console.error('🔴 Error fetching vendor profile:', error);
+                toast.error('Error loading KYC data');
+            } finally {
+                setLoading(false);
             }
+        };
+
+        if (user) {
+            fetchVendorProfile();
         }
-    }, [user, allVendors]);
+    }, [user]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -72,37 +97,75 @@ const Kyc = () => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // In a real app, you'd upload files and then send the data.
-        // Here, we'll just update the vendor's status to 'pending'.
-        const documentNames = Object.entries(formData.documents)
-            .filter(([key, value]) => value !== null)
-            .map(([key, value]) => value.name);
+        try {
+            console.log('📤 Submitting KYC data...');
 
-        const existingDocuments = Array.isArray(vendorData.documents) ? vendorData.documents : [];
-        const updatedData = {
-            ...formData,
-            kycStatus: 'pending',
-            // In a real app, you'd get URLs from a file upload service
-            documents: [...existingDocuments, ...documentNames],
-        };
+            // Prepare data for submission
+            const submitData = {
+                businessName: formData.businessName,
+                gstin: formData.gstin,
+                address: formData.address,
+                bankDetails: formData.bankDetails,
+                kycStatus: 'pending'
+            };
 
-        // We don't want to send the file objects themselves
-        delete updatedData.documents;
+            // Call API to update KYC
+            const result = await apiService.vendor.updateProfile(submitData);
+            console.log('📦 KYC Submission Response:', result);
 
-        updateVendor(user.id, updatedData);
-
-        setTimeout(() => {
+            if (result.success) {
+                toast.success('KYC details submitted for verification!');
+                // Update local vendor data
+                setVendorData({
+                    ...vendorData,
+                    ...submitData
+                });
+            } else {
+                toast.error(result.error || 'Failed to submit KYC');
+            }
+        } catch (error) {
+            console.error('🔴 Error submitting KYC:', error);
+            toast.error('Error submitting KYC details');
+        } finally {
             setIsSubmitting(false);
-            alert('KYC details submitted for verification!');
-        }, 1000);
+        }
     };
 
+    if (loading) {
+        return (
+            <div className="flex min-h-screen">
+                <Sidebar />
+                <div className="flex-1 ml-72 overflow-x-hidden">
+                    <Header />
+                    <div className="p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto"></div>
+                            <p className="mt-4 text-gray-600">Loading KYC information...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (!vendorData) {
-        return <div>Loading...</div>;
+        return (
+            <div className="flex min-h-screen">
+                <Sidebar />
+                <div className="flex-1 ml-72 overflow-x-hidden">
+                    <Header />
+                    <div className="p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)]">
+                        <div className="text-center text-red-600">
+                            <p>Failed to load vendor profile. Please try again.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     const isEditable = vendorData.kycStatus !== 'verified' && vendorData.kycStatus !== 'pending';
@@ -171,7 +234,7 @@ const Kyc = () => {
     return (
         <div className="flex min-h-screen">
             <Sidebar />
-            <div className="flex-1 ml-[290px] overflow-x-hidden">
+            <div className="flex-1 ml-72 overflow-x-hidden">
                 <Header />
                 <div className="p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-4xl mx-auto">

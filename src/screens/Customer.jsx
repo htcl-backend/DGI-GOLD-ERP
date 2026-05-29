@@ -1,500 +1,376 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
-import { FaRegEdit } from "react-icons/fa";
-import { AiOutlineDelete } from "react-icons/ai";
-import { AiOutlinePlus } from "react-icons/ai";
+import { FaHistory, FaTimes, FaArrowLeft } from "react-icons/fa";
 import { CiSearch } from "react-icons/ci";
-import { apiFetch } from "../api";
+import apiService from "./service/apiService";
+
+const SAMPLE_CUSTOMERS = [
+  {
+    customerId: "customer_demo_002",
+    customerName: "Priya Shah",
+    email: "priya.shah@example.com",
+    phoneNumber: "+919988776655",
+    createdAt: "2026-04-22T05:15:45.526Z",
+    joinedDate: "2026-04-22T05:15:45.526Z",
+    totalOrders: 3,
+    totalSpent: 31520,
+    currentMonthSpent: 0,
+    previousMonthSpent: 31520,
+    monthlySpentBreakdown: [],
+    orders: [
+      { orderId: "seed_order_priya_3", type: "SELL", metal: "GOLD", grams: 0.5, totalAmount: 3450, status: "COMPLETED", createdAt: "2026-04-22T05:15:47.039Z" },
+      { orderId: "seed_order_priya_2", type: "BUY", metal: "SILVER", grams: 200, totalAmount: 17000, status: "COMPLETED", createdAt: "2026-04-22T05:15:46.906Z" },
+      { orderId: "seed_order_priya_1", type: "BUY", metal: "GOLD", grams: 1.8, totalAmount: 11070, status: "COMPLETED", createdAt: "2026-04-22T05:15:46.767Z" }
+    ]
+  },
+  {
+    customerId: "customer_demo_001",
+    customerName: "Aman Verma",
+    email: "customer.demo@digigold.in",
+    phoneNumber: "+919900112233",
+    createdAt: "2026-04-16T07:13:43.894Z",
+    joinedDate: "2026-04-16T07:13:43.894Z",
+    totalOrders: 3,
+    totalSpent: 31200,
+    currentMonthSpent: 0,
+    previousMonthSpent: 31200,
+    monthlySpentBreakdown: [],
+    orders: [
+      { orderId: "seed_order_aman_3", type: "BUY", metal: "PLATINUM", grams: 1, totalAmount: 3400, status: "COMPLETED", createdAt: "2026-04-22T05:15:46.637Z" },
+      { orderId: "seed_order_aman_2", type: "BUY", metal: "SILVER", grams: 150, totalAmount: 12300, status: "COMPLETED", createdAt: "2026-04-22T05:15:46.522Z" },
+      { orderId: "seed_order_aman_1", type: "BUY", metal: "GOLD", grams: 2.5, totalAmount: 15500, status: "COMPLETED", createdAt: "2026-04-22T05:15:46.385Z" }
+    ]
+  }
+];
 
 const Customer = () => {
-  const [activeTab, setActiveTab] = useState("list");
-  const [showForm, setShowForm] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [customerHistory, setCustomerHistory] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    gstin: "",
-  });
+  const [filteredCustomers, setFilteredCustomers] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSearch = (e) => {
-    const term = e.target.value;
-    setSearchTerm(term);
-
-    if (term.trim() === "") {
-      setFilteredCustomers(customers);
-    } else {
-      const filtered = customers.filter(customer =>
-        customer.name.toLowerCase().includes(term.toLowerCase()) ||
-        customer.email.toLowerCase().includes(term.toLowerCase()) ||
-        customer.phone.includes(term) ||
-        customer.city?.toLowerCase().includes(term.toLowerCase())
-      );
-      setFilteredCustomers(filtered);
-    }
-  };
-
-  const handleViewCustomer = async (customer) => {
-    setSelectedCustomer(customer);
-    setActiveTab("details");
-
-    // Use static mock data for customer purchase history
-    try {
-      const mockTransactions = [
-        {
-          _id: "t1",
-          date: "2024-01-15",
-          type: "Purchase",
-          amount: 245000,
-          description: "Gold 24K purchase",
-          status: "Completed"
-        },
-        {
-          _id: "t2",
-          date: "2024-01-10",
-          type: "Purchase",
-          amount: 189000,
-          description: "Gold 22K purchase",
-          status: "Completed"
-        },
-        {
-          _id: "t3",
-          date: "2024-01-05",
-          type: "Purchase",
-          amount: 95000,
-          description: "Silver 999 purchase",
-          status: "Completed"
-        }
-      ];
-
-      const mockInvoices = [
-        {
-          _id: "i1",
-          invoiceNumber: "INV-2024-001",
-          date: "2024-01-15",
-          amount: 245000,
-          status: "Paid",
-          dueDate: "2024-01-20"
-        },
-        {
-          _id: "i2",
-          invoiceNumber: "INV-2024-002",
-          date: "2024-01-10",
-          amount: 189000,
-          status: "Paid",
-          dueDate: "2024-01-15"
-        },
-        {
-          _id: "i3",
-          invoiceNumber: "INV-2024-003",
-          date: "2024-01-05",
-          amount: 95000,
-          status: "Paid",
-          dueDate: "2024-01-10"
-        }
-      ];
-
-      setCustomerHistory({
-        transactions: mockTransactions,
-        invoices: mockInvoices
-      });
-    } catch (error) {
-      console.error('Error fetching customer history:', error);
-      setCustomerHistory({ transactions: [], invoices: [] });
-    }
-  };
-
-  const handleBackToList = () => {
-    setSelectedCustomer(null);
-    setActiveTab("list");
-    setCustomerHistory([]);
-  };
-
+  // ============================
+  // 🔹 FETCH CUSTOMERS LIST
+  // ============================
   const fetchCustomers = async () => {
     setLoading(true);
-    try {
-      // Static mock data for customers
-      const mockCustomers = [
-        {
-          _id: "1",
-          name: "Rajesh Kumar",
-          email: "rajesh.kumar@email.com",
-          phone: "+91-9876543210",
-          address: "123 MG Road",
-          city: "Bangalore",
-          state: "Karnataka",
-          zipCode: "560001",
-          gstin: "29AAAAA0000A1Z5"
-        },
-        {
-          _id: "2",
-          name: "Priya Sharma",
-          email: "priya.sharma@email.com",
-          phone: "+91-9876543211",
-          address: "456 Brigade Road",
-          city: "Bangalore",
-          state: "Karnataka",
-          zipCode: "560025",
-          gstin: "29BBBBB0000B1Z6"
-        },
-        {
-          _id: "3",
-          name: "Amit Singh",
-          email: "amit.singh@email.com",
-          phone: "+91-9876543212",
-          address: "789 Commercial Street",
-          city: "Bangalore",
-          state: "Karnataka",
-          zipCode: "560001",
-          gstin: "29CCCCC0000C1Z7"
-        },
-        {
-          _id: "4",
-          name: "Sneha Patel",
-          email: "sneha.patel@email.com",
-          phone: "+91-9876543213",
-          address: "321 Residency Road",
-          city: "Bangalore",
-          state: "Karnataka",
-          zipCode: "560025",
-          gstin: "29DDDDD0000D1Z8"
-        },
-        {
-          _id: "5",
-          name: "Vikram Rao",
-          email: "vikram.rao@email.com",
-          phone: "+91-9876543214",
-          address: "654 Cunningham Road",
-          city: "Bangalore",
-          state: "Karnataka",
-          zipCode: "560052",
-          gstin: "29EEEEE0000E1Z9"
-        }
-      ];
+    setErrorMessage("");
 
-      setCustomers(mockCustomers);
-      setFilteredCustomers(mockCustomers);
+    try {
+      // ✅ GET /analytics/vendor/customers/list with pagination
+      const result = await apiService.analytics.vendor.getAllCustomers({ limit: 100, offset: 0 });
+
+      if (result.success && result.data) {
+        // The API may wrap the payload inside { data: { total, customers, pagination } }
+        const payload = result.data.data || result.data || {};
+        const customerList = payload.customers || [];
+        setCustomers(customerList);
+        setFilteredCustomers(customerList);
+        console.log(`✅ Loaded ${customerList.length} customers`, customerList);
+      } else {
+        // Fallback to sample data when analytics API is unreachable
+        console.warn('⚠️ Analytics customers API failed, using local sample data');
+        const customerList = SAMPLE_CUSTOMERS;
+        setCustomers(customerList);
+        setFilteredCustomers(customerList);
+      }
     } catch (err) {
-      setErrorMessage("Failed to fetch customers.");
+      console.error("Error fetching customers:", err);
+      const errMsg = err.message || 'Failed to load customers';
+      setErrorMessage(errMsg);
+      alert(errMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  React.useEffect(() => {
+  // ============================
+  // 🔹 FETCH CUSTOMER DETAILS
+  // ============================
+  const handleViewCustomer = async (customerId) => {
+    setLoading(true);
+    setErrorMessage("");
+
+    try {
+      // Compose customer details from analytics endpoints (P&L + Metrics)
+      const pnlResult = await apiService.analytics.vendor.getCustomerPnl(customerId);
+      const metricsResult = await apiService.analytics.vendor.getCustomerMetrics(customerId);
+
+      if (pnlResult.success || metricsResult.success) {
+        const pnlData = pnlResult.data?.data || pnlResult.data || {};
+        const metricsData = metricsResult.data?.data || metricsResult.data || {};
+
+        const composed = {
+          customerId: pnlData.customerId || metricsData.customerId || customerId,
+          customerName: pnlData.customerName || metricsData.customerName || 'N/A',
+          email: metricsData.email || pnlData.email || 'N/A',
+          phoneNumber: metricsData.phoneNumber || pnlData.phoneNumber || 'N/A',
+          joinedDate: pnlData.joinedDate || metricsData.joinedDate,
+          totalOrders: pnlData.orderCount || metricsData.orderCount || 0,
+          totalSpent: pnlData.totalInvestment || metricsData.totalInvested || 0,
+          currentMonthSpent: pnlData.currentMonthSpent || 0,
+          previousMonthSpent: pnlData.previousMonthSpent || 0,
+          monthlySpentBreakdown: pnlData.monthlySpentBreakdown || [],
+          orders: pnlData.orders || [],
+          pnl: pnlData,
+          metrics: metricsData,
+        };
+
+        setSelectedCustomer(composed);
+        console.log('✅ Customer details loaded (composed from analytics)');
+      } else {
+        // Fallback: try to find customer in local sample list
+        console.warn('⚠️ Analytics customer details API failed, falling back to sample data');
+        const sample = (customers || []).find(c => c.customerId === customerId) || SAMPLE_CUSTOMERS.find(c => c.customerId === customerId);
+        if (sample) {
+          setSelectedCustomer(sample);
+        } else {
+          throw new Error((pnlResult.error || metricsResult.error) || 'Invalid response for customer details');
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching customer details:", err);
+      const errMsg = err.message || 'Failed to load customer details';
+      setErrorMessage(errMsg);
+      alert(errMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================
+  // 🔹 SEARCH FILTER
+  // ============================
+  const handleSearch = (e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+
+    const filtered = customers.filter((c) =>
+      `${c.customerName} ${c.email} ${c.phoneNumber} ${c.city}`
+        .toLowerCase()
+        .includes(term.toLowerCase())
+    );
+
+    setFilteredCustomers(filtered);
+  };
+
+  useEffect(() => {
     fetchCustomers();
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMessage("");
-
-    try {
-      // Simulate adding customer with static data
-      const newCustomer = {
-        _id: Date.now().toString(), // Simple ID generation
-        ...formData
-      };
-
-      setCustomers((prev) => [...prev, newCustomer]);
-      setFilteredCustomers((prev) => [...prev, newCustomer]);
-
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-        city: "",
-        state: "",
-        zipCode: "",
-        gstin: "",
-      });
-      setShowForm(false);
-    } catch (err) {
-      setErrorMessage(err.message || "Unable to save customer");
-    }
-  };
-
-  const handleDelete = async (id) => {
-    setErrorMessage("");
-    try {
-      // Update local state instead of API call
-      setCustomers((prev) => prev.filter((customer) => customer._id !== id));
-      setFilteredCustomers((prev) => prev.filter((customer) => customer._id !== id));
-    } catch (err) {
-      setErrorMessage(err.message || "Unable to delete customer");
-    }
-  };
-
   return (
-    <div className="flex min-h-screen">
+    <div className="flex overflow-x-hidden">
       <Sidebar />
-      <div className="flex-1 ml-[290px] overflow-x-hidden">
+
+      <div className="flex-1 ml-[290px] overflow-hidden">
         <Header />
-        <div className="p-6 bg-gray-50 min-h-[calc(100vh-80px)] overflow-y-auto">
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-3xl font-bold text-gray-800">
-                {activeTab === "list" ? "Customers" : `Customer: ${selectedCustomer?.name}`}
-              </h2>
-              {activeTab === "list" ? (
-                <button
-                  onClick={() => setShowForm(!showForm)}
-                  className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition font-semibold"
-                >
-                  <AiOutlinePlus size={18} />
-                  Add Customer
-                </button>
-              ) : (
-                <button
-                  onClick={handleBackToList}
-                  className="flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition font-semibold"
-                >
-                  Back to List
-                </button>
-              )}
-            </div>
 
-            {/* Add Customer Form */}
-            {showForm && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                  Add New Customer
-                </h3>
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
+        <div className="p-6 bg-gray-50 min-h-[calc(100vh-80px)] overflow-y-auto overflow-x-hidden">
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone *
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      GSTIN
-                    </label>
-                    <input
-                      type="text"
-                      name="gstin"
-                      value={formData.gstin}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      State
-                    </label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Zip Code
-                    </label>
-                    <input
-                      type="text"
-                      name="zipCode"
-                      value={formData.zipCode}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2 flex gap-3">
-                    <button
-                      type="submit"
-                      className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition font-semibold"
-                    >
-                      Save Customer
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowForm(false)}
-                      className="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-400 transition font-semibold"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {activeTab === 'list' && (
-              /* Search Bar */
-              <div className="mb-4">
-                <div className="relative max-w-md">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={handleSearch}
-                    placeholder="Search customers by name, email, phone, or city..."
-                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pl-10"
-                  />
-                  <CiSearch className="absolute top-2.5 left-3 text-gray-400" />
-                </div>
-              </div>
-            )}
-
-            {/* Customers Table */}
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-100 border-b">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                      Name
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                      Email
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                      Phone
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                      City
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                      GSTIN
-                    </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredCustomers.map((customer) => (
-                    <tr
-                      key={customer._id}
-                      className="border-b hover:bg-gray-50 transition"
-                    >
-                      <td className="px-6 py-4 text-sm text-gray-800 font-medium">
-                        {customer.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {customer.email}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {customer.phone}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {customer.city}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {customer.gstin}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex justify-center gap-3">
-                          <button className="text-blue-500 hover:text-blue-700 transition">
-                            <FaRegEdit size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(customer._id)}
-                            className="text-red-500 hover:text-red-700 transition"
-                          >
-                            <AiOutlineDelete size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {filteredCustomers.length === 0 && !loading && (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                <p className="text-gray-500 text-lg">No customers found. Add a new customer to get started.</p>
-              </div>
-            )}
+          {/* HEADER */}
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Customers</h2>
           </div>
+
+          {/* SEARCH */}
+          {!selectedCustomer && (
+            <div className="mb-4">
+              <div className="relative max-w-md">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  placeholder="Search customers..."
+                  className="w-full px-4 py-2 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <CiSearch className="absolute left-3 top-2.5 text-gray-400" />
+              </div>
+            </div>
+          )}
+
+          {/* LOADING */}
+          {loading && !selectedCustomer && (
+            <div className="text-center py-6 text-gray-600">Loading...</div>
+          )}
+
+          {/* ============================
+              🔹 CUSTOMER LIST TABLE
+          ============================ */}
+          {!loading && (
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px]">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-4 md:px-6 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                      <th className="px-4 md:px-6 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+                      <th className="px-4 md:px-6 py-3 text-left text-sm font-semibold text-gray-700">Phone</th>
+                      <th className="px-4 md:px-6 py-3 text-right text-sm font-semibold text-gray-700">Total Orders</th>
+                      <th className="px-4 md:px-6 py-3 text-right text-sm font-semibold text-gray-700">Total Spent</th>
+                      <th className="px-4 md:px-6 py-3 text-center text-sm font-semibold text-gray-700">Action</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {filteredCustomers.length > 0 ? (
+                      filteredCustomers.map((c) => (
+                        <tr key={c.customerId} className="border-b hover:bg-gray-50 text-sm">
+                          <td className="px-4 md:px-6 py-3 font-medium">{c.customerName || 'N/A'}</td>
+                          <td className="px-4 md:px-6 py-3">{c.email || 'N/A'}</td>
+                          <td className="px-4 md:px-6 py-3">{c.phoneNumber || 'N/A'}</td>
+                          <td className="px-4 md:px-6 py-3 text-right font-medium">{c.totalOrders || 0}</td>
+                          <td className="px-4 md:px-6 py-3 text-right font-semibold text-green-600">
+                            ₹{c.totalSpent?.toLocaleString() || 0}
+                          </td>
+                          <td className="px-4 md:px-6 py-3 text-center">
+                            <button
+                              onClick={() => handleViewCustomer(c.customerId)}
+                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-2 mx-auto transition"
+                            >
+                              <FaHistory />
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="text-center py-6 text-gray-500">
+                          No customers found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ERROR */}
+          {errorMessage && (
+            <div className="text-red-500 mt-4">{errorMessage}</div>
+          )}
         </div>
       </div>
+
+      {/* ============================
+          🔹 CUSTOMER DETAILS MODAL
+      ============================ */}
+      {selectedCustomer && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-50 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white p-5 flex justify-between items-center border-b z-10">
+              <div className="flex items-center gap-3">
+                <FaArrowLeft className="cursor-pointer text-xl hover:text-gray-600" onClick={() => setSelectedCustomer(null)} />
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">{selectedCustomer.customerName}</h2>
+                  <p className="text-sm text-gray-500">Customer Details & History</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedCustomer(null)}
+                className="text-2xl text-gray-500 hover:text-gray-800 transition"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {loading ? (
+                <div className="text-center py-10">Loading details...</div>
+              ) : (
+                <>
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <h3 className="text-xl font-bold mb-4">Customer Information</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600">Name</p>
+                        <p className="font-medium">{selectedCustomer.customerName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Email</p>
+                        <p className="font-medium">{selectedCustomer.email || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Phone</p>
+                        <p className="font-medium">{selectedCustomer.phoneNumber || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Joined Date</p>
+                        <p className="font-medium">{selectedCustomer.joinedDate ? new Date(selectedCustomer.joinedDate).toLocaleDateString() : 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Customer ID</p>
+                        <p className="font-medium">{selectedCustomer.customerId || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <h3 className="text-xl font-bold mb-4">Spending Summary</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600">Total Orders</p>
+                        <p className="font-medium text-lg">{selectedCustomer.totalOrders || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Total Spent</p>
+                        <p className="font-medium text-lg">₹{selectedCustomer.totalSpent?.toLocaleString() || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Current Month Spent</p>
+                        <p className="font-medium text-lg">₹{selectedCustomer.currentMonthSpent?.toLocaleString() || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Previous Month Spent</p>
+                        <p className="font-medium text-lg">₹{selectedCustomer.previousMonthSpent?.toLocaleString() || 0}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <h3 className="text-xl font-bold mb-4">Recent Orders ({selectedCustomer.orders?.length || 0})</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[600px]">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Order ID</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Amount</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedCustomer.orders && selectedCustomer.orders.length > 0 ? (
+                            selectedCustomer.orders.map(order => (
+                              <tr key={order.orderId} className="border-b hover:bg-gray-50 text-sm">
+                                <td className="px-4 py-3">{order.orderId}</td>
+                                <td className="px-4 py-3">{new Date(order.createdAt || order.orderDate || Date.now()).toLocaleDateString()}</td>
+                                <td className="px-4 py-3">₹{order.totalAmount?.toLocaleString()}</td>
+                                <td className="px-4 py-3">{order.status}</td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="4" className="text-center py-6 text-gray-500">No orders found for this customer.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

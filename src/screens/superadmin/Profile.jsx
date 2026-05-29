@@ -362,10 +362,10 @@ const SuperAdminProfile = () => {
                                             { name: "reportAccess", label: "Report Access", description: "View and export reports" },
                                             { name: "rateManagement", label: "Rate Management", description: "Set and manage gold/silver rates" },
                                             { name: "userManagement", label: "User Management", description: "Manage admin and vendor accounts" },
-                                            { name: "systemSettings", label: "System Settings", description: "Configure system-wide settings" }
+                                            { name: "systemSet tings", label: "System Settings", description: "Configure system-wide settings" }
                                         ].map(perm => (
                                             <label key={perm.name} className="flex items-start p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                                                <input
+                                                <input  
                                                     type="checkbox"
                                                     name={perm.name}
                                                     checked={accessPermissions[perm.name]}

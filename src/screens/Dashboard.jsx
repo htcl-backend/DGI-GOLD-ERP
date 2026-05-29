@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import OverviewCard from "../components/OverviewCard";
-import { FaMoneyBillWave, FaClipboard, FaArchive, FaTimes } from "react-icons/fa";
+import { FaTimes } from "react-icons/fa";
 import { Line, Doughnut, Bar } from "react-chartjs-2";
 import { apiFetch } from "../api";
+import apiService from "./service/apiService";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -39,110 +40,96 @@ const Dashboard = () => {
   const [error, setError] = useState("");
   const [selectedModal, setSelectedModal] = useState(null);
 
-  useEffect(() => {
-    const defaultStats = {
-      todaysSales: 76500,
-      goldRate: 6520,
-      activeOrders: 17,
-      totalStock: 138,
-      totalRevenue: 1550000,
-      cashBalance: 650000,
-      monthlySales: [
-        { month: 1, sales: 13000 },
-        { month: 2, sales: 19500 },
-        { month: 3, sales: 15000 },
-        { month: 4, sales: 22000 },
-        { month: 5, sales: 26000 },
-      ],
-      orderStatus: [
-        { status: 'Pending', count: 12 },
-        { status: 'Processing', count: 25 },
-        { status: 'Shipped', count: 18 },
-        { status: 'Delivered', count: 47 },
-        { status: 'Cancelled', count: 8 },
-      ],
-      topMaterials: [
-        { material: 'Gold 24K', value: 45.2 },
-        { material: 'Gold 22K', value: 32.8 },
-        { material: 'Gold 18K', value: 28.5 },
-        { material: 'Silver 999', value: 15.3 },
-      ],
-      recentOrders: [
-        { orderNumber: 'ORD-2024-001', customer: 'Rajesh Kumar', material: 'Gold 24K', value: '₹2,45,000', status: 'Delivered' },
-        { orderNumber: 'ORD-2024-002', customer: 'Priya Sharma', material: 'Gold 22K', value: '₹1,89,000', status: 'Processing' },
-        { orderNumber: 'ORD-2024-003', customer: 'Amit Patel', material: 'Silver 999', value: '₹95,000', status: 'Shipped' },
-      ],
-      lowStockAlerts: [
-        { name: 'Gold 18K', currentStock: 12, threshold: 15 },
-        { name: 'Silver 999', currentStock: 8, threshold: 10 },
-      ],
-      cashBalanceHistory: [
-        { date: '2024-06-23', transaction: 'Sale payment received', amount: '+₹80,000', balance: '₹5,70,000' },
-        { date: '2024-06-22', transaction: 'Purchase of material', amount: '-₹48,000', balance: '₹4,90,000' },
-      ],
-      x: []
-    };
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    setError("");
 
-    const fetchStats = async () => {
-      setError("");
-      try {
-        // Use static data instead of API call
-        setStats(defaultStats);
-      } catch (err) {
-        setError("Unable to connect to API, showing static demo data");
-        setStats(defaultStats);
+    try {
+      console.log("🔄 Fetching dashboard data...");
+
+      const [summaryResult, ordersResult, inventoryResult] = await Promise.all([
+        apiService.request('/dashboard/summary', 'GET'),
+        apiService.request('/orders?limit=5&sortBy=createdAt:desc', 'GET'),
+        apiService.request('/products/inventory/report', 'GET'),
+      ]);
+
+      if (summaryResult.success && summaryResult.data) {
+        const recentOrders =
+          ordersResult.success && ordersResult.data?.data?.orders
+            ? ordersResult.data.data.orders
+            : [];
+
+        const inventoryReport =
+          inventoryResult.success && inventoryResult.data
+            ? inventoryResult.data
+            : {};
+
+        setStats({
+          ...summaryResult.data,
+          recentOrders,
+          inventoryReport, // ✅ now fully API-driven
+        });
+      } else {
+        throw new Error(summaryResult.error || "Failed to fetch dashboard summary");
       }
-    };
-
-    const initialFetch = async () => {
-      setLoading(true);
-      await fetchStats();
+    } catch (err) {
+      console.error("🔴 Error fetching dashboard data:", err);
+      setError("Unable to connect to API");
+      // On error, stats remains null, and the error UI is shown.
+    } finally {
       setLoading(false);
-    };
-
-    initialFetch();
-    const intervalId = setInterval(fetchStats, 60000); // Refresh stats every 60 seconds
-
-    return () => clearInterval(intervalId); // Cleanup on unmount
-  }, []);
+    }
+  };
 
   // Overview metrics
   const metrics = [
     {
       title: "Today's Sales",
-      value: stats?.todaysSales != null ? `₹${stats.todaysSales}` : "-",
-      bgColor: "bg-green-500",
+      value: stats?.overview?.todaysSales != null ? `₹${stats.overview.todaysSales.toLocaleString('en-IN')}` : "-",
+      bgColor: "bg-gradient-to-br from-green-400 to-green-600",
       change: "+12%",
     },
     {
       title: "Gold Rate (24K)",
-      value: stats?.goldRate != null ? `₹${stats.goldRate}/g` : "-",
-      bgColor: "bg-yellow-500",
+      value: stats?.overview?.goldRate != null ? `₹${stats.overview.goldRate.toLocaleString('en-IN')}/g` : "-",
+      bgColor: "bg-gradient-to-br from-yellow-300 to-yellow-600",
       change: "Live",
     },
     {
       title: "Active Orders",
-      value: stats?.activeOrders != null ? stats.activeOrders.toString() : "-",
-      bgColor: "bg-orange-500",
+      value: stats?.overview?.activeOrders != null ? stats.overview.activeOrders.toString() : "-",
+      bgColor: "bg-gradient-to-br from-pink-400 to-pink-600",
       change: "+12%",
     },
     {
       title: "Total Stock",
-      value: stats?.totalStock != null ? `${stats.totalStock} kg` : "-",
-      bgColor: "bg-orange-500",
+      value: stats?.overview?.totalStockKg != null ? `${stats.overview.totalStockKg} kg` : "-",
+      bgColor: "bg-gradient-to-br from-cyan-400 to-cyan-600",
       change: "+8%",
     },
     {
       title: "Total Revenue",
-      value: stats?.totalRevenue != null ? `₹${stats.totalRevenue}` : "-",
-      bgColor: "bg-orange-500",
+      value: stats?.overview?.totalRevenue != null ? `₹${stats.overview.totalRevenue.toLocaleString('en-IN')}` : "-",
+      bgColor: "bg-gradient-to-br from-purple-400 to-purple-600",
       change: "+15%",
     },
     {
       title: "Cash Balance",
-      value: stats?.cashBalance != null ? `₹${stats.cashBalance}` : "-",
-      bgColor: "bg-orange-500",
+      value: stats?.overview?.cashBalance != null ? `₹${stats.overview.cashBalance.toLocaleString('en-IN')}` : "-",
+      bgColor: "bg-gradient-to-br from-indigo-400 to-indigo-600",
       change: "+5%",
+    },
+    {
+      title: "Total Products",
+      value: stats?.inventoryReport?.totalProducts?.toString() || "-",
+      bgColor: "bg-gradient-to-br from-blue-400 to-blue-600",
+      change: `${stats?.inventoryReport?.activeProducts || 0} active`,
+    },
+    {
+      title: "Stock Value",
+      value: stats?.inventoryReport?.totalStockValue != null ? `₹${stats.inventoryReport.totalStockValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : "-",
+      bgColor: "bg-gradient-to-br from-orange-400 to-orange-600",
+      change: "Updated",
     }
   ];
 
@@ -159,16 +146,16 @@ const Dashboard = () => {
         data:
           stats?.monthlySales?.map((item) => item.sales ?? item.revenue) ||
           [13000, 19500, 15000, 22000, 26000],
-        borderColor: '#3B82F6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderWidth: 2,
+        borderColor: '#FF6B6B',
+        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+        borderWidth: 3,
         fill: true,
         tension: 0.4,
-        pointRadius: 5,
-        pointBackgroundColor: '#3B82F6',
+        pointRadius: 6,
+        pointBackgroundColor: '#FF6B6B',
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
-        pointHoverRadius: 7,
+        pointHoverRadius: 8,
       }
     ]
   };
@@ -213,8 +200,10 @@ const Dashboard = () => {
     datasets: [
       {
         data: stats?.orderStatus?.map((item) => item.count) || [45, 78, 32, 156, 12],
-        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
-        hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+        backgroundColor: ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#C7CEEA'],
+        hoverBackgroundColor: ['#FF4757', '#2FBAA0', '#FFC837', '#6CC8D0', '#B39DDB'],
+        borderColor: '#fff',
+        borderWidth: 3,
       }
     ]
   };
@@ -240,9 +229,10 @@ const Dashboard = () => {
       {
         label: 'Stock Value',
         data: stats?.topMaterials?.map((item) => item.value) || [45.2, 32.8, 28.5, 15.3, 12.7, 8.9],
-        backgroundColor: '#36A2EB',
-        borderColor: '#36A2EB',
-        borderWidth: 1
+        backgroundColor: ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#C7CEEA', '#FF8B94'],
+        borderColor: ['#FF4757', '#2FBAA0', '#FFC837', '#6CC8D0', '#B39DDB', '#FF6B7A'],
+        borderWidth: 2,
+        borderRadius: 5,
       }
     ]
   };
@@ -268,6 +258,34 @@ const Dashboard = () => {
       }
     },
     onClick: () => setSelectedModal('materialStock')
+  };
+
+  // Inventory by Metal (Doughnut Chart)
+  const inventoryByMetalData = {
+    labels: stats?.inventoryReport?.byMetal ? Object.keys(stats.inventoryReport.byMetal).filter(k => stats.inventoryReport.byMetal[k] > 0) : ['GOLD', 'SILVER'],
+    datasets: [
+      {
+        data: stats?.inventoryReport?.byMetal ? Object.values(stats.inventoryReport.byMetal).filter(v => v > 0) : [110, 25],
+        backgroundColor: ['#FFD700', '#C0C0C0', '#FF6B6B', '#4ECDC4', '#FFE66D'],
+        hoverBackgroundColor: ['#FFC800', '#A8A8A8', '#FF4757', '#2FBAA0', '#FFC837'],
+        borderColor: '#fff',
+        borderWidth: 3,
+      }
+    ]
+  };
+
+  const inventoryByMetalOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+      },
+      title: {
+        display: true,
+        text: 'Inventory by Metal (Product Count)'
+      }
+    },
   };
 
   // Sample data for Recent Orders
@@ -511,34 +529,15 @@ const Dashboard = () => {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">Loading dashboard...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-white p-8 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
-          <p className="text-gray-600">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <div className="flex-1 ml-[290px] overflow-x-hidden">
+      <div className="flex-1 ml-72 overflow-x-hidden">
         <Header />
         <div className="p-4 sm:p-6 lg:p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
           <div className="max-w-7xl mx-auto">
             {/* Overview Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
               <IconContext.Provider value={{ size: "1.75rem" }}>
                 {metrics.map((metric, index) => (
                   <OverviewCard
@@ -552,6 +551,7 @@ const Dashboard = () => {
                       if (metric.title === "Total Stock") setSelectedModal('totalStock');
                       else if (metric.title === "Active Orders") setSelectedModal('activeOrders');
                       else if (metric.title === "Total Revenue") setSelectedModal('totalRevenue');
+                      else if (metric.title === "Stock Value") setSelectedModal('materialStock');
                       else if (metric.title === "Cash Balance") setSelectedModal('cashBalance');
                     }}
                   />
@@ -589,55 +589,62 @@ const Dashboard = () => {
             {/* Other Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-8">
               {/* Monthly Sales Chart */}
-              <div className="bg-white rounded-lg card-shadow p-4 sm:p-6 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSelectedModal('totalRevenue')}>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Monthly Sales</h3>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg card-shadow p-4 sm:p-6 cursor-pointer hover:shadow-xl transition-all border border-blue-100" onClick={() => setSelectedModal('totalRevenue')}>
+                <h3 className="text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">📊 Monthly Sales</h3>
                 <div style={{ height: '300px' }}>
                   <Line data={monthlySalesData} options={monthlySalesOptions} />
                 </div>
               </div>
               {/* Stock Value Chart */}
-              <div className="bg-white rounded-lg card-shadow p-4 sm:p-6 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSelectedModal('orderStatus')}>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Sales Orders by Status</h3>
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg card-shadow p-4 sm:p-6 cursor-pointer hover:shadow-xl transition-all border border-purple-100" onClick={() => setSelectedModal('orderStatus')}>
+                <h3 className="text-base sm:text-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">🔄 Sales Orders by Status</h3>
                 <div style={{ height: '300px', display: 'flex', justifyContent: 'center' }}>
                   <Doughnut data={orderStatusData} options={orderStatusOptions} />
                 </div>
               </div>
-              <div className="bg-white rounded-lg card-shadow p-6 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSelectedModal('materialStock')}>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Materials by Stock Value</h3>
+              <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-lg card-shadow p-4 sm:p-6 cursor-pointer hover:shadow-xl transition-all border border-cyan-100" onClick={() => setSelectedModal('materialStock')}>
+                <h3 className="text-base sm:text-lg font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent mb-4">📈 Top Materials by Stock Value</h3>
                 <div style={{ height: '300px' }}>
                   <Bar data={stockValueData} options={stockValueOptions} />
+                </div>
+              </div>
+              {/* Inventory by Metal Chart */}
+              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg card-shadow p-4 sm:p-6 border border-yellow-100">
+                <h3 className="text-base sm:text-lg font-semibold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent mb-4">💎 Inventory by Metal</h3>
+                <div style={{ height: '300px', display: 'flex', justifyContent: 'center' }}>
+                  <Doughnut data={inventoryByMetalData} options={inventoryByMetalOptions} />
                 </div>
               </div>
             </div>
 
             {/* Recent Orders Section */}
-            <div className="bg-white rounded-lg card-shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Orders</h3>
+            <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg card-shadow p-6 border border-gray-200">
+              <h3 className="text-lg font-semibold bg-gradient-to-r from-slate-700 to-gray-700 bg-clip-text text-transparent mb-4">📋 Recent Orders</h3>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-blue-100 to-indigo-100 border-b-2 border-blue-300">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Number</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase">Order Number</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase">Customer</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase">Material</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase">Value</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-blue-900 uppercase">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {recentOrders.map((order, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
+                    {stats?.recentOrders?.map((order, index) => (
+                      <tr key={index} className={`hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
                           {order.orderNumber || order.orderId || order._id}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {order.customerName || order.customer?.name || order.customer || "-"}
+                          {order.customerName || order.customer?.name || order.userId || "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {order.material || order.productName || order.product?.name || "-"}
+                          {order.material || order.metal || order.productName || "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                          {order.value || order.totalPrice}
+                          ₹{order.totalAmountINR?.toLocaleString('en-IN') || '0'}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>

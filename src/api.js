@@ -4,8 +4,25 @@ const BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
 export const getToken = () => localStorage.getItem("token");
 
 export const authHeaders = () => {
+    const headers = {};
+
+    // ✅ Add Authorization token
     const token = getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // ✅ Add vendor context headers for multi-tenant authorization
+    const tenantId = localStorage.getItem('tenantId');
+    const vendorId = localStorage.getItem('vendorId');
+    if (tenantId) {
+        headers['X-Tenant-Id'] = tenantId;
+    }
+    if (vendorId) {
+        headers['X-Vendor-Id'] = vendorId;
+    }
+
+    return headers;
 };
 
 export const apiFetch = async (path, options = {}) => {

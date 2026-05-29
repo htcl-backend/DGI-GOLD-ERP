@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import LiveMetalsTicker from '../../components/LiveMetalsTicker';
 import { useAuth } from '../../Contexts/AuthContext';
 import { useData } from '../../Contexts/DataContext';
 import OverviewCard from '../../components/OverviewCard';
+import CustomerAnalysis from '../../components/CustomerAnalysis';
+import CustomerList from '../../components/CustomerList';
+import MonthlyPnL from '../../components/MonthlyPnL';
 import apiService from '../service/apiService';
 import { FaMoneyBillWave, FaShoppingCart, FaUsers, FaBox } from 'react-icons/fa';
 import {
@@ -72,6 +76,21 @@ const VendorDashboardContent = () => {
     const { orders, products, metalPrices, loading, error } = useData();
     const [ordersSummary, setOrdersSummary] = useState(null);
     const [holdingsSummary, setHoldingsSummary] = useState(null);
+    const [selectedCustomerId, setSelectedCustomerId] = useState('cust_12345');
+    const [showAnalysis, setShowAnalysis] = useState(false);
+    const [showMonthlyPnL, setShowMonthlyPnL] = useState(false);
+    const [showCustomerList, setShowCustomerList] = useState(false);
+    const [dashboardMetrics, setDashboardMetrics] = useState({
+        totalInvestment: 0,
+        currentValue: 0,
+        unrealizedPnl: 0,
+        avgUnitCost: 0,
+        totalOrders: 0,
+        totalInvested: 0,
+        totalHoldings: 0,
+        pnlFromMetrics: 0,
+    });
+    const navigate = useNavigate();
 
     // Debug logging
     useEffect(() => {
@@ -140,6 +159,57 @@ const VendorDashboardContent = () => {
                     totalGain: 415000,
                 });
             }
+
+            try {
+                const ltvResult = await apiService.analytics.vendor.getAllCustomersLtv({ limit: 50 });
+                if (ltvResult.success) {
+                    const ltvPayload = ltvResult.data?.data || ltvResult.data || {};
+                    const ltvRows = Array.isArray(ltvPayload.data) ? ltvPayload.data : ltvPayload || [];
+                    const totalInvestment = ltvRows.reduce((sum, item) => sum + (item.lifetimeValue || 0), 0);
+                    const totalOrdersCount = ltvRows.reduce((sum, item) => sum + (item.orderCount || 0), 0);
+                    const avgUnitCost = ltvRows.length ? Math.round(ltvRows.reduce((sum, item) => sum + (item.averageOrderValue || 0), 0) / ltvRows.length) : 0;
+                    const totalInvested = ltvRows.reduce((sum, item) => sum + (item.lifetimeValue || 0), 0);
+                    const totalHoldingsValue = holdingsSummary?.totalValue || 0;
+                    const unrealized = holdingsSummary?.totalGain || 0;
+                    const pnlFromMetrics = totalHoldingsValue - totalInvestment;
+
+                    setDashboardMetrics({
+                        totalInvestment,
+                        currentValue: totalHoldingsValue,
+                        unrealizedPnl: unrealized,
+                        avgUnitCost,
+                        totalOrders: totalOrdersCount || ordersSummary?.totalOrders || metrics.totalOrders,
+                        totalInvested,
+                        totalHoldings: totalHoldingsValue,
+                        pnlFromMetrics,
+                    });
+                } else {
+                    setDashboardMetrics(prev => ({
+                        ...prev,
+                        totalInvestment: ordersSummary?.totalRevenue || metrics.totalRevenue,
+                        currentValue: holdingsSummary?.totalValue || 0,
+                        unrealizedPnl: holdingsSummary?.totalGain || 0,
+                        avgUnitCost: metrics.totalOrders ? Math.round(metrics.totalRevenue / metrics.totalOrders) : 0,
+                        totalOrders: ordersSummary?.totalOrders || metrics.totalOrders,
+                        totalInvested: ordersSummary?.totalRevenue || metrics.totalRevenue,
+                        totalHoldings: holdingsSummary?.totalValue || 0,
+                        pnlFromMetrics: holdingsSummary?.totalGain || 0,
+                    }));
+                }
+            } catch (err) {
+                console.warn('Customer LTV metrics fetch failed, using fallback metrics:', err);
+                setDashboardMetrics(prev => ({
+                    ...prev,
+                    totalInvestment: ordersSummary?.totalRevenue || metrics.totalRevenue,
+                    currentValue: holdingsSummary?.totalValue || 0,
+                    unrealizedPnl: holdingsSummary?.totalGain || 0,
+                    avgUnitCost: metrics.totalOrders ? Math.round(metrics.totalRevenue / metrics.totalOrders) : 0,
+                    totalOrders: ordersSummary?.totalOrders || metrics.totalOrders,
+                    totalInvested: ordersSummary?.totalRevenue || metrics.totalRevenue,
+                    totalHoldings: holdingsSummary?.totalValue || 0,
+                    pnlFromMetrics: holdingsSummary?.totalGain || 0,
+                }));
+            }
         };
 
         if (user) {
@@ -184,7 +254,7 @@ const VendorDashboardContent = () => {
 
         return days.map(date => {
             const dayOrders = orders.filter(order =>
-                new Date(order.orderDate || order.createdAt).toISOString().split('T')[0] === date
+                new Date(order.orderDate || order.createdAt).toString().split('T')[0] === date
             );
             return {
                 date: new Date(date).toLocaleDateString('en-IN', { weekday: 'short' }),
@@ -266,18 +336,53 @@ const VendorDashboardContent = () => {
 
                         {/* Overview Cards */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
+                            {[
+                                { title: 'Total Investment', value: `₹${dashboardMetrics.totalInvestment.toLocaleString('en-IN')}`, subtitle: 'Lifetime vendor investment', theme: 'from-sky-500 to-cyan-500' },
+                                { title: 'Current Value', value: `₹${dashboardMetrics.currentValue.toLocaleString('en-IN')}`, subtitle: 'Current holdings value', theme: 'from-emerald-500 to-teal-500' },
+                                { title: 'Unrealized P&L', value: `₹${dashboardMetrics.unrealizedPnl.toLocaleString('en-IN')}`, subtitle: 'Performance today', theme: 'from-amber-500 to-orange-500' },
+                                { title: 'Avg Unit Cost', value: `₹${dashboardMetrics.avgUnitCost.toLocaleString('en-IN')}`, subtitle: 'Average cost per order', theme: 'from-fuchsia-500 to-violet-500' },
+                            ].map((card) => (
+                                <div
+                                    key={card.title}
+                                    className={`bg-gradient-to-br ${card.theme} text-white rounded-3xl shadow-xl p-5`}
+                                >
+                                    <div className="text-xs uppercase tracking-wide opacity-80 mb-2">{card.title}</div>
+                                    <div className="text-2xl font-semibold mb-2">{card.value}</div>
+                                    <div className="text-sm opacity-90">{card.subtitle}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
+                            {[
+                                { title: 'Total Orders', value: dashboardMetrics.totalOrders.toLocaleString('en-IN'), subtitle: 'View order list', theme: 'from-slate-800 to-gray-800' },
+                                { title: 'Total Invested', value: `₹${dashboardMetrics.totalInvested.toLocaleString('en-IN')}`, subtitle: 'Review investment reports', theme: 'from-indigo-500 to-blue-500' },
+                                { title: 'Total Holdings', value: `₹${dashboardMetrics.totalHoldings.toLocaleString('en-IN')}`, subtitle: 'View holdings inventory', theme: 'from-rose-500 to-pink-500' },
+                                { title: 'P&L from Metrics', value: `₹${dashboardMetrics.pnlFromMetrics.toLocaleString('en-IN')}`, subtitle: 'Open performance reports', theme: 'from-lime-500 to-emerald-500' },
+                            ].map((card) => (
+                                <button
+                                    key={card.title}
+                                    onClick={() => {
+                                        if (card.title === 'Total Orders') navigate('/orders');
+                                        else if (card.title === 'Total Holdings') navigate('/inventory');
+                                        else navigate('/reports');
+                                    }}
+                                    className={`group bg-gradient-to-br ${card.theme} text-white rounded-3xl shadow-xl p-5 text-left hover:shadow-2xl transition`}
+                                >
+                                    <div className="text-xs uppercase tracking-wide opacity-80 mb-2">{card.title}</div>
+                                    <div className="text-2xl font-semibold mb-2">{card.value}</div>
+                                    <div className="text-sm opacity-90 group-hover:underline">{card.subtitle}</div>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
+
                             <OverviewCard
                                 title="Total Revenue"
                                 value={`₹${metrics.totalRevenue.toLocaleString('en-IN')}`}
                                 icon={FaMoneyBillWave}
                                 color="green"
                             />
-                            <OverviewCard
-                                title="Total Orders"
-                                value={metrics.totalOrders}
-                                icon={FaShoppingCart}
-                                color="blue"
-                            />
+
                             <OverviewCard
                                 title="Customers"
                                 value={metrics.totalCustomers}
@@ -454,6 +559,123 @@ const VendorDashboardContent = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Customer Analysis Section */}
+                        {/* <div className="mt-8 border-t-2 border-gray-200 pt-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-800">Customer P&L Analysis</h2>
+                                    <p className="text-gray-600 mt-1">Deep dive into individual customer performance and holdings</p>
+                                </div>
+                                {!showAnalysis && (
+                                    <button
+                                        onClick={() => setShowAnalysis(!showAnalysis)}
+                                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition"
+                                    >
+                                        View Analysis
+                                    </button>
+                                )}
+                            </div>
+
+                            {showAnalysis && (
+                                <div className="bg-gray-50 rounded-lg p-6">
+
+                                    <div className="mb-6 flex gap-4 flex-wrap items-end">
+                                        <div className="flex-1 min-w-[250px]">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Select Customer
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter Customer ID (e.g., cust_12345)"
+                                                value={selectedCustomerId}
+                                                onChange={(e) => setSelectedCustomerId(e.target.value)}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-transparent"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={() => setShowAnalysis(!showAnalysis)}
+                                            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition"
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
+
+                                    <CustomerAnalysis customerId={selectedCustomerId} />
+                                </div>
+                            )}
+                        </div> */}
+
+                        {/* Monthly P&L Section */}
+                        {/* <div className="mt-8 border-t-2 border-gray-200 pt-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-800">Monthly Financial Report</h2>
+                                    <p className="text-gray-600 mt-1">Track your monthly profit and loss trends</p>
+                                </div>
+                                {!showMonthlyPnL && (
+                                    <button
+                                        onClick={() => setShowMonthlyPnL(!showMonthlyPnL)}
+                                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition"
+                                    >
+                                        View Report
+                                    </button>
+                                )}
+                            </div>
+
+                            {showMonthlyPnL && (
+                                <div className="bg-gray-50 rounded-lg p-6">
+                                    <div className="mb-4 flex justify-end">
+                                        <button
+                                            onClick={() => setShowMonthlyPnL(!showMonthlyPnL)}
+                                            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition"
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
+                                    <MonthlyPnL />
+                                </div>
+                            )}
+                        </div> */}
+
+                        {/* Customer List Section */}
+                        {/* <div className="mt-8 border-t-2 border-gray-200 pt-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-800">View All Customers</h2>
+                                    <p className="text-gray-600 mt-1">Browse and manage all your customers</p>
+                                </div>
+                                {!showCustomerList && (
+                                    <button
+                                        onClick={() => setShowCustomerList(!showCustomerList)}
+                                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition"
+                                    >
+                                        View Customers
+                                    </button>
+                                )}
+                            </div>
+
+                            {showCustomerList && (
+                                <div className="bg-gray-50 rounded-lg p-6">
+                                    <div className="mb-4 flex justify-end">
+                                        <button
+                                            onClick={() => setShowCustomerList(!showCustomerList)}
+                                            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition"
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
+                                    <CustomerList
+                                        onSelectCustomer={(customerId) => {
+                                            setSelectedCustomerId(customerId);
+                                            setShowAnalysis(true);
+                                            setShowCustomerList(false);
+                                        }}
+                                        selectedCustomerId={selectedCustomerId}
+                                    />
+                                </div>
+                            )}
+                        </div> */}
                     </div>
                 </div>
             </div>

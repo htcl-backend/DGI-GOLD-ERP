@@ -9,6 +9,7 @@ export const vendorNavItems = [
     { key: "buy-gold", label: "Buy Gold/Silver", path: "/buy-gold" },
     { key: "sell-gold", label: "Sell Gold/Silver", path: "/sell-gold" },
     { key: "deliveries", label: "Deliveries", path: "/delivery" },
+    { key: "reports", label: "Reports", path: "/reports" },
     { key: "kyc", label: "My KYC", path: "/kyc" },
     { key: "notifications", label: "Notifications", path: "/notifications" },
     { key: "profile", label: "Profile", path: "/vendor/profile" },

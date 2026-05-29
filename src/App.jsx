@@ -16,11 +16,11 @@ import Orders from './screens/Orders';
 import OrdersDetails from './screens/OrdersDetails';
 import BuyGold from './screens/BuyGold';
 import SellGold from './screens/Product/SellGold';
-import Inventory from './screens/Product/Inventory';
+import Inventory from './screens/Inventory';
 import ProductList from './screens/Product/ProductList';
 import Kyc from './screens/Kyc';
 import Profile from './screens/Profile';
-import Settings from './screens/Settings';
+// import Settings from './screens/Settings';
 import Transactions from './screens/Transactions';
 import Notifications from './screens/Notifications';
 import Reports from './screens/Reports';
@@ -158,7 +158,7 @@ function App() {
             <Route
               path="/vendor/profile"
               element={
-                <ProtectedRoute allowedRoles={['vendor', 'VENDOR', 'vendor_owner']}>
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER', 'vendor_operations']}>
                   <VendorProfile />
                 </ProtectedRoute>
               }
@@ -166,7 +166,7 @@ function App() {
             <Route
               path="/vendor/settings"
               element={
-                <ProtectedRoute allowedRoles={['vendor', 'VENDOR', 'vendor_owner']}>
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER', 'vendor_operations']}>
                   <VendorSettings />
                 </ProtectedRoute>
               }
@@ -174,7 +174,7 @@ function App() {
             <Route
               path="/wallet"
               element={
-                <ProtectedRoute allowedRoles={['vendor', 'VENDOR', 'vendor_owner']}>
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER', 'vendor_operations']}>
                   <WalletPage />
                 </ProtectedRoute>
               }
@@ -214,7 +214,7 @@ function App() {
             <Route
               path="/inventory"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER', 'vendor_operations']}>
                   <Inventory />
                 </ProtectedRoute>
               }
@@ -243,14 +243,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/settings"
               element={
                 <ProtectedRoute>
                   <Settings />
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route
               path="/transactions"
               element={
@@ -278,19 +278,19 @@ function App() {
             <Route
               path="/customers"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER', 'vendor_operations']}>
                   <Customer />
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/customer"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER']}>
                   <Customer />
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route
               path="/vendors"
               element={

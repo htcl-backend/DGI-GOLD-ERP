@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useAuth } from "../Contexts/AuthContext";
+import apiService from "./service/apiService";
 import { FaWallet, FaPlus, FaEye, FaEyeSlash, FaDownload, FaFilter, FaHistory, FaTimes, FaArrowLeft } from "react-icons/fa";
 
 const WalletPage = () => {
@@ -10,95 +11,62 @@ const WalletPage = () => {
     const [filterType, setFilterType] = useState("all");
     const [filterDate, setFilterDate] = useState("all");
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [walletBalance, setWalletBalance] = useState(null);
+    const [transactions, setTransactions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    // Wallet data
+    // Fetch wallet data on component mount
+    useEffect(() => {
+        const fetchWalletData = async () => {
+            setLoading(true);
+            setError("");
+            try {
+                // Fetch balance
+                const balanceResult = await apiService.wallet.getBalance();
+                console.log("💰 Wallet Balance:", balanceResult);
+
+                // Fetch transactions
+                const txnResult = await apiService.wallet.getTransactions({ limit: 20 });
+                console.log("📋 Wallet Transactions:", txnResult);
+
+                if (balanceResult.success) {
+                    setWalletBalance(balanceResult.data);
+                }
+
+                if (txnResult.success && txnResult.data) {
+                    // Handle nested response structure if needed
+                    const txnData = txnResult.data?.data || txnResult.data;
+                    setTransactions(Array.isArray(txnData) ? txnData : []);
+                }
+            } catch (err) {
+                console.error("❌ Error fetching wallet data:", err);
+                setError("Failed to load wallet data");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchWalletData();
+    }, []);
+
+    // Wallet data - merge API data with user info
     const walletData = {
-        totalBalance: user?.totalRevenue || 125000,
+        totalBalance: walletBalance?.balance || walletBalance?.availableBalance || 0,
         currency: "₹",
-        vendorName: user?.businessName || "Ramesh Jewellers Pvt Ltd",
-        accountHolder: user?.name || "Ramesh Kumar",
+        vendorName: user?.businessName || "Vendor Account",
+        accountHolder: user?.name || "Account Holder",
         email: user?.email || "vendor@dgi.com",
         phone: user?.phone || "+91-9876543210",
-        accountStatus: "Active",
-        bankAccount: "XXXX XXXX XXXX 1234",
-        ifsc: "ICIC0000001",
-        gstin: user?.gstin || "27AABCU9603R1ZX",
+        accountStatus: walletBalance?.status || "Active",
+        bankAccount: walletBalance?.bankAccount || "XXXX XXXX XXXX ****",
+        ifsc: walletBalance?.ifsc || "XXXX0000001",
+        gstin: user?.gstin || "N/A",
         kycStatus: user?.kycStatus || "Verified",
-        totalTransactions: 28,
-        monthlyEarnings: 89500,
+        totalTransactions: transactions?.length || 0,
+        monthlyEarnings: walletBalance?.monthlyEarnings || 0,
         lastUpdated: new Date().toLocaleDateString(),
-        allCustomers: [
-            { id: 1, name: "Arjun Sharma", email: "arjun@email.com", phone: "+91-9876543201", totalSpent: 50000, orders: 3 },
-            { id: 2, name: "Priya Patel", email: "priya@email.com", phone: "+91-9876543202", totalSpent: 75000, orders: 5 },
-            { id: 3, name: "Rahul Kumar", email: "rahul@email.com", phone: "+91-9876543203", totalSpent: 42000, orders: 2 },
-            { id: 4, name: "Anjali Singh", email: "anjali@email.com", phone: "+91-9876543204", totalSpent: 38000, orders: 4 },
-            { id: 5, name: "Vikram Gupta", email: "vikram@email.com", phone: "+91-9876543205", totalSpent: 60000, orders: 3 },
-        ],
-        allTransactions: [
-            {
-                id: 1,
-                type: "credit",
-                amount: 50000,
-                date: "2024-04-05",
-                description: "Gold Purchase Order #ORD-001",
-                customer: "Customer Name 1",
-                status: "completed",
-            },
-            {
-                id: 2,
-                type: "debit",
-                amount: 5000,
-                date: "2024-04-04",
-                description: "Withdrawal",
-                customer: "-",
-                status: "completed",
-            },
-            {
-                id: 3,
-                type: "credit",
-                amount: 30000,
-                date: "2024-04-03",
-                description: "Silver Purchase Order #ORD-002",
-                customer: "Customer Name 2",
-                status: "completed",
-            },
-            {
-                id: 4,
-                type: "credit",
-                amount: 25000,
-                date: "2024-04-02",
-                description: "Platinum Order #ORD-003",
-                customer: "Customer Name 3",
-                status: "pending",
-            },
-            {
-                id: 5,
-                type: "debit",
-                amount: 3000,
-                date: "2024-04-01",
-                description: "Service Charges",
-                customer: "-",
-                status: "completed",
-            },
-            {
-                id: 6,
-                type: "credit",
-                amount: 45000,
-                date: "2024-03-31",
-                description: "Gold Purchase Order #ORD-004",
-                customer: "Customer Name 4",
-                status: "completed",
-            },
-            {
-                id: 7,
-                type: "credit",
-                amount: 20000,
-                date: "2024-03-30",
-                description: "Silver Order #ORD-005",
-                customer: "Customer Name 5",
-                status: "completed",
-            },
-        ]
+        allTransactions: transactions || [],
     };
 
     const formatCurrency = (amount) => {
@@ -159,6 +127,20 @@ const WalletPage = () => {
                                 <span>Download Statement</span>
                             </button>
                         </div>
+
+                        {/* Loading State */}
+                        {loading && (
+                            <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
+                                <p>Loading wallet data...</p>
+                            </div>
+                        )}
+
+                        {/* Error State */}
+                        {error && (
+                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                                <p>⚠️ {error}</p>
+                            </div>
+                        )}
 
                         {/* Balance Card */}
                         <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl">
@@ -248,46 +230,7 @@ const WalletPage = () => {
                             </div>
                         </div>
 
-                        {/* Customers Section */}
-                        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                                <h3 className="text-xl font-bold text-gray-800">Customer List ({walletData.allCustomers.length})</h3>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50 border-b">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Customer Name</th>
-                                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
-                                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Phone</th>
-                                            <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">Total Spent</th>
-                                            <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">Orders</th>
-                                            <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                        {walletData.allCustomers.map((customer) => (
-                                            <tr key={customer.id} className="hover:bg-gray-50 transition">
-                                                <td className="px-6 py-4 text-gray-800 font-medium">{customer.name}</td>
-                                                <td className="px-6 py-4 text-gray-600">{customer.email}</td>
-                                                <td className="px-6 py-4 text-gray-600">{customer.phone}</td>
-                                                <td className="px-6 py-4 text-right font-semibold text-green-600">{formatCurrency(customer.totalSpent)}</td>
-                                                <td className="px-6 py-4 text-right text-gray-800 font-medium">{customer.orders}</td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <button
-                                                        onClick={() => setSelectedCustomer(customer)}
-                                                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 mx-auto transition"
-                                                    >
-                                                        <FaHistory />
-                                                        View History
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+
 
                         {/* Transactions Section */}
                         <div className="bg-white rounded-lg shadow-md overflow-hidden">

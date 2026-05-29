@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import apiService from '../screens/service/apiService';
 
 const DataContext = createContext();
 
@@ -9,9 +10,9 @@ const dummyProducts = [
         id: 'prod-1',
         name: '24K Gold Coin',
         category: 'gold',
-        purity: '24K',
+        purity: '2K',
         weight: 10,
-        price: 65200,
+        price: 200,
         description: 'Pure 24K gold coin',
         image: '/assets/images/products/gold-coin.jpg',
         stock: 50,
@@ -94,11 +95,10 @@ const dummyOrders = [
 const dummyMetalPrices = {
     gold: {
         '24K': 65200,
-        '22K': 62000,
-        '18K': 54000
+
     },
     silver: 88000,
-    lastUpdated: new Date().toISOString()
+    Updates: new Date().toISOString()
 };
 
 const dummyCustomers = [
@@ -275,27 +275,85 @@ export const DataProvider = ({ children }) => {
 
     // Fetch Orders - using dummy data
     const fetchOrders = useCallback(async () => {
+        if (!isAuthenticated) {
+            setOrders(dummyOrders);
+            return;
+        }
         try {
             setError(null);
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 500));
-            setOrders(dummyOrders);
+            console.log("🔄 Fetching orders from API...");
+
+            const vendorId = user?.tenantId || localStorage.getItem('vendorId');
+            const endpoint = vendorId ? `/orders?vendorId=${vendorId}` : '/orders';
+
+            const result = await apiService.request(endpoint, 'GET');
+
+            if (result.success && result.data) {
+                // ✅ Handle paginated response: { data: [...], total: 1, page: 1, ... }
+                let apiOrders = result.data.data || result.data;
+
+                // If it's a paginated response object with a 'data' array inside, extract it
+                if (apiOrders && typeof apiOrders === 'object' && !Array.isArray(apiOrders) && apiOrders.data && Array.isArray(apiOrders.data)) {
+                    apiOrders = apiOrders.data;
+                }
+
+                if (Array.isArray(apiOrders)) {
+                    setOrders(apiOrders);
+                    console.log(`✅ Fetched ${apiOrders.length} orders.`);
+                } else {
+                    console.warn("⚠️ Orders data from API is not an array:", apiOrders);
+                    setOrders([]);
+                }
+            } else {
+                throw new Error(result.error || 'Failed to fetch orders');
+            }
         } catch (err) {
             setError(err.message);
+            console.error("🔴 Error fetching orders:", err);
+            setOrders([]);
         }
-    }, []);
+    }, [isAuthenticated, user]);
 
     // Fetch Products - using dummy data
     const fetchProducts = useCallback(async () => {
+        if (!isAuthenticated) {
+            setProducts(dummyProducts);
+            return;
+        }
         try {
             setError(null);
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 300));
-            setProducts(dummyProducts);
+            console.log("🔄 Fetching products from API...");
+
+            const vendorId = user?.tenantId || localStorage.getItem('vendorId');
+            const endpoint = vendorId ? `/products?vendorId=${vendorId}` : '/products';
+
+            const result = await apiService.request(endpoint, 'GET');
+
+            if (result.success && result.data) {
+                // ✅ Handle paginated response: { data: [...], total: 5, page: 1, ... }
+                let apiProducts = result.data.data || result.data;
+
+                // If it's a paginated response object with a 'data' array inside, extract it
+                if (apiProducts && typeof apiProducts === 'object' && !Array.isArray(apiProducts) && apiProducts.data && Array.isArray(apiProducts.data)) {
+                    apiProducts = apiProducts.data;
+                }
+
+                if (Array.isArray(apiProducts)) {
+                    setProducts(apiProducts);
+                    console.log(`✅ Fetched ${apiProducts.length} products.`);
+                } else {
+                    console.warn("⚠️ Products data from API is not an array:", apiProducts);
+                    setProducts([]);
+                }
+            } else {
+                throw new Error(result.error || 'Failed to fetch products');
+            }
         } catch (err) {
             setError(err.message);
+            console.error("🔴 Error fetching products:", err);
+            setProducts([]); // On error, show empty list instead of dummy data
         }
-    }, []);
+    }, [isAuthenticated, user]);
 
     // Fetch Holdings - using dummy data
     const fetchHoldings = useCallback(async () => {
@@ -386,19 +444,17 @@ export const DataProvider = ({ children }) => {
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
+            setError(null);
             try {
+                // These now handle auth state internally and will use dummy data if not authenticated.
                 await Promise.all([
                     fetchProducts(),
+                    fetchOrders(),
                     fetchMetalPrices(),
+                    fetchHoldings(),
+                    fetchAddresses(),
+                    fetchShipments(),
                 ]);
-                if (isAuthenticated) {
-                    await Promise.all([
-                        fetchOrders(),
-                        fetchHoldings(),
-                        fetchAddresses(),
-                        fetchShipments(),
-                    ]);
-                }
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -407,16 +463,7 @@ export const DataProvider = ({ children }) => {
         };
 
         loadData();
-    }, [isAuthenticated]);
-
-    // Refresh data when authentication changes
-    useEffect(() => {
-        if (isAuthenticated) {
-            fetchHoldings();
-            fetchAddresses();
-            fetchShipments();
-        }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, user, fetchProducts, fetchOrders, fetchHoldings, fetchAddresses, fetchShipments, fetchMetalPrices]);
 
     // Additional helper functions
     const getProductById = (id) => products.find(p => p.id === id);

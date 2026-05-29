@@ -7,18 +7,11 @@ import { AiFillProduct } from "react-icons/ai";
 import { PiUsersDuotone } from "react-icons/pi";
 import { MdOutlineCalendarViewWeek, MdOutlineDeliveryDining } from "react-icons/md";
 import { IoNotifications, IoSettings, IoShapesOutline, IoTrainSharp } from "react-icons/io5";
-import { Link } from "react-router-dom";
-import { HeaderContext } from "../Contexts/HeaderContext";
+import { NavLink } from "react-router-dom";
 import { IoMdPin } from "react-icons/io";
 import { vendorNavItems } from "./Layout/VendorLayout";
 
 const SidebarNew = () => {
-    const { selected, setSelected } = useContext(HeaderContext);
-
-    const handleClick = (status) => {
-        setSelected(status);
-    };
-
     // ✅ Always use vendor nav items - super admin role is hidden
     const navItems = vendorNavItems;
 
@@ -27,6 +20,7 @@ const SidebarNew = () => {
         orders: <HiNumberedList />,
         customers: <PiUsersDuotone />,
         products: <AiFillProduct />,
+        Reports: <FaFileAlt />,
         inventory: <MdOutlineCalendarViewWeek />,
         "buy-gold": <AiFillProduct />,
         "sell-gold": <AiFillProduct />,
@@ -45,14 +39,16 @@ const SidebarNew = () => {
                 <span className="text-[#a66002] text-[24px] font-[700]">DGI GOLD</span>
             </div>
             {navItems.map((item) => (
-                <div
+                <NavLink
                     key={item.key}
-                    className={`flex items-center gap-2 px-6 py-2 mt-4 rounded-xl cursor-pointer ${selected === item.key ? "text-amber-500 bg-[#edcda4]" : ""}`}
-                    onClick={() => handleClick(item.key)}
+                    to={item.path}
+                    className={({ isActive }) =>
+                        `flex items-center gap-2 px-6 py-2 mt-4 rounded-xl cursor-pointer ${isActive ? "text-amber-500 bg-[#edcda4]" : "hover:bg-gray-100"}`
+                    }
                 >
                     {iconMap[item.key] || <IoShapesOutline />}
-                    <Link to={item.path}>{item.label}</Link>
-                </div>
+                    <span>{item.label}</span>
+                </NavLink>
             ))}
         </div>
     );
