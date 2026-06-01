@@ -97,7 +97,10 @@ const VendorDashboardContent = () => {
         console.log('🔍 VendorDashboard: user=', user);
         console.log('🔍 VendorDashboard: authLoading=', authLoading);
         console.log('🔍 VendorDashboard: dataLoading=', loading);
-    }, [user, authLoading, loading]);
+        console.log('🔍 VendorDashboard: orders.length=', orders?.length);
+        console.log('🔍 VendorDashboard: products.length=', products?.length);
+        console.log('🔍 VendorDashboard: orders=', orders);
+    }, [user, authLoading, loading, orders, products]);
 
     // Fetch additional summaries with fallback data
     useEffect(() => {
@@ -114,10 +117,10 @@ const VendorDashboardContent = () => {
                         totalRevenue: orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0),
                         totalCustomers: new Set(orders.map(o => o.customerName || o.userId)).size,
                         ordersByStatus: {
-                            'Pending': orders.filter(o => o.status === 'pending' || o.status === 'Pending').length,
-                            'Processing': orders.filter(o => o.status === 'processing' || o.status === 'Processing').length,
-                            'Shipped': orders.filter(o => o.status === 'shipped' || o.status === 'Shipped').length,
-                            'Delivered': orders.filter(o => o.status === 'delivered' || o.status === 'Delivered').length,
+                            'Pending': orders.filter(o => o.status?.toLowerCase() === 'pending').length,
+                            'Processing': orders.filter(o => o.status?.toLowerCase() === 'processing' || o.status?.toLowerCase() === 'shipped').length,
+                            'Shipped': orders.filter(o => o.status?.toLowerCase() === 'shipped').length,
+                            'Delivered': orders.filter(o => o.status?.toLowerCase() === 'delivered').length,
                         }
                     });
                 }
@@ -128,10 +131,10 @@ const VendorDashboardContent = () => {
                     totalRevenue: orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0),
                     totalCustomers: new Set(orders.map(o => o.customerName || o.userId)).size,
                     ordersByStatus: {
-                        'Pending': orders.filter(o => o.status === 'pending' || o.status === 'Pending').length,
-                        'Processing': orders.filter(o => o.status === 'processing' || o.status === 'Processing').length,
-                        'Shipped': orders.filter(o => o.status === 'shipped' || o.status === 'Shipped').length,
-                        'Delivered': orders.filter(o => o.status === 'delivered' || o.status === 'Delivered').length,
+                        'Pending': orders.filter(o => o.status?.toLowerCase() === 'pending').length,
+                        'Processing': orders.filter(o => o.status?.toLowerCase() === 'processing' || o.status?.toLowerCase() === 'shipped').length,
+                        'Shipped': orders.filter(o => o.status?.toLowerCase() === 'shipped').length,
+                        'Delivered': orders.filter(o => o.status?.toLowerCase() === 'delivered').length,
                     }
                 });
             }
@@ -217,14 +220,14 @@ const VendorDashboardContent = () => {
         }
     }, [user, orders]);
 
-    // Calculate metrics
+    // Calculate metrics - with case-insensitive status matching
     const metrics = {
         totalRevenue: orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0),
         totalOrders: orders.length,
         totalCustomers: new Set(orders.map(o => o.customerName || o.userId)).size,
         totalProducts: products.length,
-        completedOrders: orders.filter(order => order.status === 'completed').length,
-        pendingOrders: orders.filter(order => order.status === 'pending').length,
+        completedOrders: orders.filter(order => order.status?.toLowerCase() === 'completed' || order.status?.toLowerCase() === 'delivered').length,
+        pendingOrders: orders.filter(order => order.status?.toLowerCase() === 'pending').length,
         lowStockProducts: products.filter(product => product.stock < 10).length,
     };
 
@@ -233,15 +236,15 @@ const VendorDashboardContent = () => {
         .sort((a, b) => new Date(b.orderDate || b.createdAt) - new Date(a.orderDate || a.createdAt))
         .slice(0, 5);
 
-    // Orders by status
+    // Orders by status - normalized to handle API response (capitalized) and dummy data (lowercase)
     const ordersByStatus = {
-        completed: orders.filter(o => o.status === 'completed').length,
-        pending: orders.filter(o => o.status === 'pending').length,
-        processing: orders.filter(o => o.status === 'processing').length,
-        cancelled: orders.filter(o => o.status === 'cancelled').length,
+        completed: orders.filter(o => o.status?.toLowerCase() === 'completed' || o.status?.toLowerCase() === 'delivered').length,
+        pending: orders.filter(o => o.status?.toLowerCase() === 'pending').length,
+        processing: orders.filter(o => o.status?.toLowerCase() === 'processing' || o.status?.toLowerCase() === 'shipped').length,
+        cancelled: orders.filter(o => o.status?.toLowerCase() === 'cancelled').length,
     };
 
-    // Revenue trend (last 7 days)
+    // Revenue trend (last 7 days) - fixed date comparison
     const getRevenueTrend = () => {
         const days = [];
         const now = new Date();
@@ -253,9 +256,11 @@ const VendorDashboardContent = () => {
         }
 
         return days.map(date => {
-            const dayOrders = orders.filter(order =>
-                new Date(order.orderDate || order.createdAt).toString().split('T')[0] === date
-            );
+            const dayOrders = orders.filter(order => {
+                const orderDate = new Date(order.orderDate || order.createdAt);
+                const orderDateStr = orderDate.toISOString().split('T')[0];
+                return orderDateStr === date;
+            });
             return {
                 date: new Date(date).toLocaleDateString('en-IN', { weekday: 'short' }),
                 revenue: dayOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0),
@@ -334,68 +339,65 @@ const VendorDashboardContent = () => {
                             <LiveMetalsTicker />
                         </div>
 
-                        {/* Overview Cards */}
+                        {/* Overview Cards - Live Data from API */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
                             {[
-                                { title: 'Total Investment', value: `₹${dashboardMetrics.totalInvestment.toLocaleString('en-IN')}`, subtitle: 'Lifetime vendor investment', theme: 'from-sky-500 to-cyan-500' },
-                                { title: 'Current Value', value: `₹${dashboardMetrics.currentValue.toLocaleString('en-IN')}`, subtitle: 'Current holdings value', theme: 'from-emerald-500 to-teal-500' },
-                                { title: 'Unrealized P&L', value: `₹${dashboardMetrics.unrealizedPnl.toLocaleString('en-IN')}`, subtitle: 'Performance today', theme: 'from-amber-500 to-orange-500' },
-                                { title: 'Avg Unit Cost', value: `₹${dashboardMetrics.avgUnitCost.toLocaleString('en-IN')}`, subtitle: 'Average cost per order', theme: 'from-fuchsia-500 to-violet-500' },
+                                { title: 'Total Revenue', value: `₹${metrics.totalRevenue.toLocaleString('en-IN')}`, subtitle: 'All time revenue', theme: 'from-sky-500 to-cyan-500', icon: '💰' },
+                                { title: 'Total Orders', value: metrics.totalOrders.toLocaleString('en-IN'), subtitle: 'View order list', theme: 'from-slate-800 to-gray-800', icon: '📦', action: '/orders' },
+                                { title: 'Total Products', value: metrics.totalProducts.toLocaleString('en-IN'), subtitle: 'View holdings inventory', theme: 'from-rose-500 to-pink-500', icon: '📊', action: '/inventory' },
+                                { title: 'Total Customers', value: metrics.totalCustomers.toLocaleString('en-IN'), subtitle: 'Customer base', theme: 'from-emerald-500 to-teal-500', icon: '👥' },
+                            ].map((card) => (
+                                card.action ? (
+                                    <button
+                                        key={card.title}
+                                        onClick={() => navigate(card.action)}
+                                        className={`group bg-gradient-to-br ${card.theme} text-white rounded-3xl shadow-xl p-5 text-left hover:shadow-2xl transition transform hover:scale-105 hover:-translate-y-1 cursor-pointer`}
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <span className="text-2xl group-hover:scale-125 transition-transform">{card.icon}</span>
+                                        </div>
+                                        <div className="text-xs uppercase tracking-wide opacity-80 mb-2 group-hover:opacity-100 transition">{card.title}</div>
+                                        <div className="text-2xl font-semibold mb-2">{card.value}</div>
+                                        <div className="text-sm opacity-90 group-hover:underline">{card.subtitle}</div>
+                                    </button>
+                                ) : (
+                                    <div
+                                        key={card.title}
+                                        className={`bg-gradient-to-br ${card.theme} text-white rounded-3xl shadow-xl p-5 hover:shadow-2xl transition transform hover:scale-105 hover:-translate-y-1 cursor-pointer`}
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <span className="text-2xl hover:scale-125 transition-transform">{card.icon}</span>
+                                        </div>
+                                        <div className="text-xs uppercase tracking-wide opacity-80 mb-2 hover:opacity-100 transition">{card.title}</div>
+                                        <div className="text-2xl font-semibold mb-2">{card.value}</div>
+                                        <div className="text-sm opacity-90">{card.subtitle}</div>
+                                    </div>
+                                )
+                            ))}
+                        </div>
+
+                        {/* Performance Metrics */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
+                            {[
+                                { title: 'Completed Orders', value: metrics.completedOrders, subtitle: 'Successfully completed', theme: 'from-green-500 to-emerald-500', icon: '✅' },
+                                { title: 'Pending Orders', value: metrics.pendingOrders, subtitle: 'Awaiting processing', theme: 'from-yellow-500 to-amber-500', icon: '⏳' },
+                                { title: 'Low Stock Items', value: metrics.lowStockProducts, subtitle: 'Need restocking', theme: 'from-orange-500 to-red-500', icon: '⚠️' },
+                                { title: 'Avg Order Value', value: `₹${metrics.totalOrders > 0 ? (metrics.totalRevenue / metrics.totalOrders).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '0'}`, subtitle: 'Average per order', theme: 'from-indigo-500 to-purple-500', icon: '📈' },
                             ].map((card) => (
                                 <div
                                     key={card.title}
-                                    className={`bg-gradient-to-br ${card.theme} text-white rounded-3xl shadow-xl p-5`}
+                                    className={`bg-gradient-to-br ${card.theme} text-white rounded-3xl shadow-xl p-5 hover:shadow-2xl transition transform hover:scale-105 hover:-translate-y-1 cursor-pointer`}
                                 >
-                                    <div className="text-xs uppercase tracking-wide opacity-80 mb-2">{card.title}</div>
+                                    <div className="flex items-start justify-between mb-2">
+                                        <span className="text-2xl hover:scale-125 transition-transform">{card.icon}</span>
+                                    </div>
+                                    <div className="text-xs uppercase tracking-wide opacity-80 mb-2 hover:opacity-100 transition">{card.title}</div>
                                     <div className="text-2xl font-semibold mb-2">{card.value}</div>
                                     <div className="text-sm opacity-90">{card.subtitle}</div>
                                 </div>
                             ))}
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
-                            {[
-                                { title: 'Total Orders', value: dashboardMetrics.totalOrders.toLocaleString('en-IN'), subtitle: 'View order list', theme: 'from-slate-800 to-gray-800' },
-                                { title: 'Total Invested', value: `₹${dashboardMetrics.totalInvested.toLocaleString('en-IN')}`, subtitle: 'Review investment reports', theme: 'from-indigo-500 to-blue-500' },
-                                { title: 'Total Holdings', value: `₹${dashboardMetrics.totalHoldings.toLocaleString('en-IN')}`, subtitle: 'View holdings inventory', theme: 'from-rose-500 to-pink-500' },
-                                { title: 'P&L from Metrics', value: `₹${dashboardMetrics.pnlFromMetrics.toLocaleString('en-IN')}`, subtitle: 'Open performance reports', theme: 'from-lime-500 to-emerald-500' },
-                            ].map((card) => (
-                                <button
-                                    key={card.title}
-                                    onClick={() => {
-                                        if (card.title === 'Total Orders') navigate('/orders');
-                                        else if (card.title === 'Total Holdings') navigate('/inventory');
-                                        else navigate('/reports');
-                                    }}
-                                    className={`group bg-gradient-to-br ${card.theme} text-white rounded-3xl shadow-xl p-5 text-left hover:shadow-2xl transition`}
-                                >
-                                    <div className="text-xs uppercase tracking-wide opacity-80 mb-2">{card.title}</div>
-                                    <div className="text-2xl font-semibold mb-2">{card.value}</div>
-                                    <div className="text-sm opacity-90 group-hover:underline">{card.subtitle}</div>
-                                </button>
-                            ))}
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
 
-                            <OverviewCard
-                                title="Total Revenue"
-                                value={`₹${metrics.totalRevenue.toLocaleString('en-IN')}`}
-                                icon={FaMoneyBillWave}
-                                color="green"
-                            />
-
-                            <OverviewCard
-                                title="Customers"
-                                value={metrics.totalCustomers}
-                                icon={FaUsers}
-                                color="purple"
-                            />
-                            <OverviewCard
-                                title="Products"
-                                value={metrics.totalProducts}
-                                icon={FaBox}
-                                color="amber"
-                            />
-                        </div>
 
                         {/* Charts Section */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-8">

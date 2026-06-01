@@ -1,15 +1,19 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import { useAuth } from "../../Contexts/AuthContext";
 import { HeaderContext } from "../../Contexts/HeaderContext";
+import apiService from "../../screens/service/apiService";
+import toast from "react-hot-toast";
 import { FaUser, FaLock, FaBell, FaSave, FaEye, FaEyeSlash, FaUpload, FaClock, FaMapMarkerAlt, FaPhone, FaEnvelope, FaShoppingBag, FaBuilding, FaPalette } from "react-icons/fa";
 
 const VendorProfile = () => {
     const navigate = useNavigate();
-    const { user, isSuperAdmin } = useAuth();
+    const { user, isSuperAdmin, updateProfileImage } = useAuth();
     const { theme, toggleTheme } = useContext(HeaderContext);
+    const fileInputRef = useRef(null);
+    const [imageLoading, setImageLoading] = useState(false);
 
     // Redirect if not vendor
     useEffect(() => {
@@ -138,21 +142,118 @@ const VendorProfile = () => {
         setNotificationSettings(prev => ({ ...prev, [name]: checked }));
     };
 
+    // Handle profile image upload
+    const handleImageUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please select a valid image file');
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('File size must be less than 5MB');
+            return;
+        }
+
+        try {
+            setImageLoading(true);
+
+            // Create preview
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const imageUrl = event.target?.result;
+                setBasicInfo(prev => ({
+                    ...prev,
+                    profilePhoto: file,
+                    profilePhotoUrl: imageUrl
+                }));
+
+                // ✅ Update profile image in AuthContext (syncs with Header)
+                updateProfileImage(imageUrl);
+            };
+            reader.readAsDataURL(file);
+
+            // Upload image to API
+            const formData = new FormData();
+            formData.append('profileImage', file);
+
+            const result = await apiService.vendor.updateProfileImage(formData);
+
+            if (result.success) {
+                toast.success('Profile image uploaded successfully!');
+                if (result.data?.profileImage) {
+                    updateProfileImage(result.data.profileImage);
+                    setBasicInfo(prev => ({
+                        ...prev,
+                        profilePhotoUrl: result.data.profileImage
+                    }));
+                }
+            } else {
+                toast.error(result.error || 'Failed to upload image');
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            toast.error('Error uploading profile image');
+        } finally {
+            setImageLoading(false);
+        }
+    };
+
     const handleSaveProfile = async () => {
         setSaveLoading(true);
         try {
-            // API call would go here
-            console.log("Saving vendor profile...", {
-                basicInfo,
-                businessInfo,
-                locationInfo,
-                bankInfo,
-                operationalInfo,
+            const payload = {
+                name: basicInfo.fullName,
+                phone: basicInfo.phone,
+                businessInfo: {
+                    shopName: businessInfo.shopName,
+                    gstin: businessInfo.gstin,
+                    panNumber: businessInfo.panNumber,
+                    businessType: businessInfo.businessType,
+                    shopRegistration: businessInfo.shopRegistration,
+                    hallmarkLicense: businessInfo.hallmarkLicense,
+                    metalTradingPref: businessInfo.metalTradingPref,
+                    defaultPurity: businessInfo.defaultPurity
+                },
+                locationInfo: {
+                    shopAddress: locationInfo.shopAddress,
+                    city: locationInfo.city,
+                    state: locationInfo.state,
+                    pincode: locationInfo.pincode,
+                    googleMapsLink: locationInfo.googleMapsLink
+                },
+                bankInfo: {
+                    bankName: bankInfo.bankName,
+                    accountNumber: bankInfo.accountNumber,
+                    ifscCode: bankInfo.ifscCode,
+                    accountHolderName: bankInfo.accountHolderName,
+                    upiId: bankInfo.upiId
+                },
+                operationalInfo: {
+                    workingHoursStart: operationalInfo.workingHoursStart,
+                    workingHoursEnd: operationalInfo.workingHoursEnd,
+                    workingDays: operationalInfo.workingDays,
+                    dayOff: operationalInfo.dayOff
+                },
                 notificationSettings
-            });
-            setEditMode(false);
+            };
+
+            // Call API to update profile
+            const result = await apiService.vendor.updateProfile(payload);
+
+            if (result.success) {
+                toast.success('Profile updated successfully!');
+                setEditMode(false);
+            } else {
+                toast.error(result.error || 'Failed to update profile');
+            }
         } catch (error) {
             console.error("Error saving profile:", error);
+            toast.error('Error updating profile: ' + error.message);
         } finally {
             setSaveLoading(false);
         }
@@ -162,15 +263,30 @@ const VendorProfile = () => {
         setSaveLoading(true);
         try {
             if (passwordData.newPassword !== passwordData.confirmPassword) {
-                alert("Passwords do not match!");
+                toast.error('Passwords do not match!');
                 return;
             }
-            // API call would go here
-            console.log("Updating password...");
-            setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-            alert("Password updated successfully!");
+
+            if (passwordData.newPassword.length < 6) {
+                toast.error('Password must be at least 6 characters');
+                return;
+            }
+
+            // Call API to update password
+            const result = await apiService.vendor.changePassword({
+                oldPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
+            });
+
+            if (result.success) {
+                setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                toast.success('Password updated successfully!');
+            } else {
+                toast.error(result.error || 'Failed to update password');
+            }
         } catch (error) {
             console.error("Error updating password:", error);
+            toast.error('Error updating password: ' + error.message);
         } finally {
             setSaveLoading(false);
         }
@@ -236,18 +352,35 @@ const VendorProfile = () => {
                                     <div className="mb-8">
                                         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
                                             <div className="flex flex-col items-center">
-                                                <img
-                                                    src={basicInfo.profilePhotoUrl}
-                                                    alt="Profile"
-                                                    className="w-24 h-24 rounded-full border-4 border-amber-500 object-cover"
-                                                />
+                                                <div className="relative">
+                                                    <img
+                                                        src={basicInfo.profilePhotoUrl}
+                                                        alt="Profile"
+                                                        className="w-24 h-24 rounded-full border-4 border-amber-500 object-cover"
+                                                    />
+                                                    {imageLoading && (
+                                                        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                                                            <div className="animate-spin h-6 w-6 border-2 border-white rounded-full border-t-transparent"></div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 {editMode && (
-                                                    <label className="mt-3 px-4 py-2 bg-amber-600 text-white rounded-lg cursor-pointer hover:bg-amber-700 transition text-sm flex items-center gap-2">
+                                                    <button
+                                                        onClick={triggerFileInput}
+                                                        disabled={imageLoading}
+                                                        className="mt-3 px-4 py-2 bg-amber-600 text-white rounded-lg cursor-pointer hover:bg-amber-700 transition text-sm flex items-center gap-2 disabled:bg-gray-400"
+                                                    >
                                                         <FaUpload className="w-4 h-4" />
-                                                        Upload Photo
-                                                        <input type="file" className="hidden" />
-                                                    </label>
+                                                        {imageLoading ? 'Uploading...' : 'Upload Photo'}
+                                                    </button>
                                                 )}
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleImageUpload}
+                                                    className="hidden"
+                                                />
                                             </div>
                                             <div>
                                                 <p className="text-sm text-gray-600">Role Badge</p>

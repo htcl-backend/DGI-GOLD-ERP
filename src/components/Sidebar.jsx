@@ -7,13 +7,14 @@ import { AiFillProduct } from "react-icons/ai";
 import { PiUsersDuotone } from "react-icons/pi";
 import { MdOutlineCalendarViewWeek, MdOutlineDeliveryDining } from "react-icons/md";
 import { IoNotifications, IoSettings, IoShapesOutline, IoTrainSharp } from "react-icons/io5";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { IoMdPin } from "react-icons/io";
 import { vendorNavItems } from "./Layout/VendorLayout";
+import { superAdminNavItems } from "./Layout/SuperAdminLayout";
 
 const Sidebar = () => {
-  // ✅ Always show vendor nav items - super admin role is hidden
-  const navItems = vendorNavItems;
+  const location = useLocation();
+  const navItems = location.pathname.startsWith("/superadmin") ? superAdminNavItems : vendorNavItems;
 
   const iconMap = {
     dashboard: <RxDashboard />,

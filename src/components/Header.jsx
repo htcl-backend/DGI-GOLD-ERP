@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { IoNotifications } from "react-icons/io5";
 import { FaCaretDown } from "react-icons/fa6";
-import profileImg from "../assets/images/users/user-1.jpg";
+import defaultProfileImg from "../assets/images/users/user-1.jpg";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useData } from "../Contexts/DataContext";
 import { useAuth } from "../Contexts/AuthContext";
@@ -18,6 +18,9 @@ const Header = () => {
   // Find the current nav item to get its label for the title
   const currentNavItem = vendorNavItems.find(item => location.pathname.startsWith(item.path));
   const pageTitle = currentNavItem ? currentNavItem.label : "Dashboard";
+
+  // Use user's profile image or fallback to default
+  const profileImage = user?.profileImage || defaultProfileImg;
 
   // Toggle the dropdown menu when profile is clicke....
   const toggleDropdown = () => {
@@ -49,7 +52,7 @@ const Header = () => {
           </div>
           <div className="flex items-center gap-1">
             <img
-              src={profileImg}
+              src={profileImage}
               alt="Profile"
               className="w-[36px] rounded-full cursor-pointer"
               onClick={toggleDropdown} // Toggle the dropdown when clicked

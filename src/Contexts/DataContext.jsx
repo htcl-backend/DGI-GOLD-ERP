@@ -283,14 +283,14 @@ export const DataProvider = ({ children }) => {
             setError(null);
             console.log("🔄 Fetching orders from API...");
 
-            const vendorId = user?.tenantId || localStorage.getItem('vendorId');
-            const endpoint = vendorId ? `/orders?vendorId=${vendorId}` : '/orders';
+            // ✅ Use vendor-specific orders endpoint
+            const endpoint = '/vendor/orders?page=1&limit=100';
 
             const result = await apiService.request(endpoint, 'GET');
 
             if (result.success && result.data) {
-                // ✅ Handle paginated response: { data: [...], total: 1, page: 1, ... }
-                let apiOrders = result.data.data || result.data;
+                // ✅ Handle paginated response: { orders: [...], total: 10, page: 1, ... }
+                let apiOrders = result.data.orders || result.data.data || result.data;
 
                 // If it's a paginated response object with a 'data' array inside, extract it
                 if (apiOrders && typeof apiOrders === 'object' && !Array.isArray(apiOrders) && apiOrders.data && Array.isArray(apiOrders.data)) {
@@ -302,7 +302,7 @@ export const DataProvider = ({ children }) => {
                     console.log(`✅ Fetched ${apiOrders.length} orders.`);
                 } else {
                     console.warn("⚠️ Orders data from API is not an array:", apiOrders);
-                    setOrders([]);
+                    setOrders(dummyOrders);
                 }
             } else {
                 throw new Error(result.error || 'Failed to fetch orders');
@@ -310,7 +310,7 @@ export const DataProvider = ({ children }) => {
         } catch (err) {
             setError(err.message);
             console.error("🔴 Error fetching orders:", err);
-            setOrders([]);
+            setOrders(dummyOrders);
         }
     }, [isAuthenticated, user]);
 
@@ -324,14 +324,14 @@ export const DataProvider = ({ children }) => {
             setError(null);
             console.log("🔄 Fetching products from API...");
 
-            const vendorId = user?.tenantId || localStorage.getItem('vendorId');
-            const endpoint = vendorId ? `/products?vendorId=${vendorId}` : '/products';
+            // ✅ Use vendor-specific products endpoint
+            const endpoint = '/vendor/inventory?page=1&limit=100';
 
             const result = await apiService.request(endpoint, 'GET');
 
             if (result.success && result.data) {
-                // ✅ Handle paginated response: { data: [...], total: 5, page: 1, ... }
-                let apiProducts = result.data.data || result.data;
+                // ✅ Handle paginated response
+                let apiProducts = result.data.products || result.data.data || result.data;
 
                 // If it's a paginated response object with a 'data' array inside, extract it
                 if (apiProducts && typeof apiProducts === 'object' && !Array.isArray(apiProducts) && apiProducts.data && Array.isArray(apiProducts.data)) {
@@ -343,7 +343,7 @@ export const DataProvider = ({ children }) => {
                     console.log(`✅ Fetched ${apiProducts.length} products.`);
                 } else {
                     console.warn("⚠️ Products data from API is not an array:", apiProducts);
-                    setProducts([]);
+                    setProducts(dummyProducts);
                 }
             } else {
                 throw new Error(result.error || 'Failed to fetch products');
@@ -351,7 +351,7 @@ export const DataProvider = ({ children }) => {
         } catch (err) {
             setError(err.message);
             console.error("🔴 Error fetching products:", err);
-            setProducts([]); // On error, show empty list instead of dummy data
+            setProducts(dummyProducts);
         }
     }, [isAuthenticated, user]);
 

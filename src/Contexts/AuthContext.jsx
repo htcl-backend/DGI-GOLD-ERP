@@ -198,6 +198,30 @@ export const AuthProvider = ({ children }) => {
         return result;
     };
 
+    // ✅ Update profile image and sync with user state
+    const updateProfileImage = async (imageUrl) => {
+        try {
+            // Update user state with new profile image
+            setUser(prev => ({
+                ...prev,
+                profileImage: imageUrl
+            }));
+
+            // Update localStorage with new image
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const userData = JSON.parse(storedUser);
+                userData.profileImage = imageUrl;
+                localStorage.setItem('user', JSON.stringify(userData));
+            }
+
+            return { success: true };
+        } catch (error) {
+            console.error('Error updating profile image:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
     const changePassword = async (oldPassword, newPassword) => {
         return await apiService.auth.changePassword({ oldPassword, newPassword });
     };
@@ -216,6 +240,7 @@ export const AuthProvider = ({ children }) => {
             register,
             logout,
             updateProfile,
+            updateProfileImage,
             changePassword,
             isAuthenticated: !!user && !!localStorage.getItem('token'),
             isSuperAdmin: isSuperAdminUser,

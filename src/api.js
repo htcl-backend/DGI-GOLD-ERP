@@ -1,5 +1,5 @@
 // Use relative path for proxy in development, full URL in production
-const BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
+const BASE_URL = import.meta.env.DEV ? "/api/v1" : import.meta.env.VITE_API_URL || "/api/v1";
 
 export const getToken = () => localStorage.getItem("token");
 
