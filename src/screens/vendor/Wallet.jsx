@@ -13,11 +13,13 @@ const VendorWallet = () => {
         currency: 'INR',
         locked: 0,
         available: 0,
+        pending: 0,
         totalEarned: 0,
         totalWithdrawn: 0,
     });
 
     const [transactions, setTransactions] = useState([]);
+    const [ledgerData, setLedgerData] = useState([]);
     const [showDepositModal, setShowDepositModal] = useState(false);
     const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const [depositAmount, setDepositAmount] = useState('');
@@ -37,44 +39,93 @@ const VendorWallet = () => {
             setFetchingData(true);
             console.log('🔄 Fetching wallet balance...');
 
-            // ✅ GET /wallet/balance
-            const balanceResult = await apiService.wallet.getBalance();
+            const currentUserId = user?.uid || user?.id || user?.userId || null;
+            const role = user?.role?.toLowerCase() || '';
+            const isAdminUser = role.includes('superadmin') || role.includes('super_admin') || role.includes('admin');
+            const balanceResult = isAdminUser && currentUserId
+                ? await apiService.wallet.getAdminBalance(currentUserId)
+                : await apiService.wallet.getBalance();
             console.log('📦 Balance Response:', balanceResult);
 
+            if (!balanceResult.success) {
+                console.warn('⚠️ Wallet balance fetch failed:', balanceResult.error);
+            }
+
             if (balanceResult.success) {
-                const balanceData = balanceResult.data?.data || balanceResult.data;
+                const balanceData = balanceResult.data?.data || balanceResult.data || {};
+                const available = balanceData.available ?? balanceData.availableBalance ?? balanceData.balance ?? 0;
+                const locked = balanceData.locked ?? balanceData.lockedBalance ?? balanceData.blockedAmount ?? 0;
+                const pending = balanceData.pending ?? balanceData.pendingBalance ?? 0;
+                const totalBalance = balanceData.totalBalance ?? balanceData.balance ?? (Number(available) + Number(locked) + Number(pending));
+
                 setWalletData(prev => ({
                     ...prev,
-                    balance: balanceData.balance || 0,
-                    available: balanceData.available || 0,
-                    locked: balanceData.locked || 0,
+                    balance: totalBalance,
+                    available,
+                    locked,
+                    pending: pending,
                     currency: balanceData.currency || 'INR',
-                    totalEarned: balanceData.totalEarned || 0,
-                    totalWithdrawn: balanceData.totalWithdrawn || 0,
+                    totalEarned: balanceData.totalEarned ?? balanceData.earnings ?? 0,
+                    totalWithdrawn: balanceData.totalWithdrawn ?? balanceData.withdrawn ?? 0,
                 }));
             }
 
             // ✅ GET /wallet/transactions
             console.log('🔄 Fetching transactions...');
-            const txnResult = await apiService.wallet.getTransactions({
-                limit: 20,
-                status: 'COMPLETED'
-            });
+            const txnResult = await apiService.wallet.getTransactions({ limit: 50 });
             console.log('📦 Transactions Response:', txnResult);
 
             if (txnResult.success) {
-                const txnData = Array.isArray(txnResult.data) ? txnResult.data : (txnResult.data?.data || []);
-                const formattedTransactions = (Array.isArray(txnData) ? txnData : []).map(txn => ({
-                    id: txn.id || txn.transactionId,
+                const rawTxnData = txnResult.data;
+                const txnData = Array.isArray(rawTxnData)
+                    ? rawTxnData
+                    : Array.isArray(rawTxnData?.data)
+                        ? rawTxnData.data
+                        : Array.isArray(rawTxnData?.data?.transactions)
+                            ? rawTxnData.data.transactions
+                            : Array.isArray(rawTxnData?.transactions)
+                                ? rawTxnData.transactions
+                                : [];
+
+                const formattedTransactions = txnData.map(txn => ({
+                    id: txn.id || txn.transactionId || txn._id || `${txn.type}-${txn.amount}-${txn.createdAt}`,
                     date: txn.createdAt ? new Date(txn.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-                    type: txn.type?.toLowerCase() === 'deposit' ? 'credit' : 'debit',
-                    amount: txn.amount || 0,
-                    description: txn.description || `${txn.type} transaction`,
+                    type: txn.type?.toLowerCase() === 'deposit' || txn.type?.toLowerCase() === 'credit' ? 'credit' : 'debit',
+                    amount: txn.amount || txn.value || 0,
+                    description: txn.description || txn.type || 'Transaction',
                     status: txn.status?.toLowerCase() || 'pending',
-                    reference: txn.reference || txn.id
+                    reference: txn.reference || txn.id || txn.transactionId
                 }));
+
                 setTransactions(formattedTransactions);
                 console.log('✅ Transactions loaded:', formattedTransactions.length);
+            }
+
+            // ✅ Fetch wallet ledger data from /api/w1/wallet/ledger
+            console.log('🔄 Fetching wallet ledger...');
+            const ledgerResult = await apiService.wallet.getLedger();
+            console.log('📦 Ledger Response:', ledgerResult);
+
+            if (ledgerResult.success) {
+                const rawLedgerData = ledgerResult.data;
+                const ledgerList = Array.isArray(rawLedgerData)
+                    ? rawLedgerData
+                    : Array.isArray(rawLedgerData?.data)
+                        ? rawLedgerData.data
+                        : Array.isArray(rawLedgerData?.ledger)
+                            ? rawLedgerData.ledger
+                            : [];
+
+                setLedgerData(ledgerList.map((entry, idx) => ({
+                    id: entry.id || entry.transactionId || `ledger-${idx}`,
+                    date: entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : entry.date || 'N/A',
+                    type: entry.type || entry.transactionType || 'N/A',
+                    amount: entry.amount || entry.value || 0,
+                    balance: entry.availableBalance ?? entry.runningBalance ?? entry.balance ?? 0,
+                    description: entry.description || entry.note || 'Wallet ledger entry',
+                    status: entry.status || 'N/A',
+                })));
+                console.log('✅ Wallet ledger loaded:', ledgerList.length);
             }
         } catch (error) {
             console.error('🔴 Error fetching wallet data:', error);
@@ -172,7 +223,7 @@ const VendorWallet = () => {
         return (
             <div className="flex min-h-screen bg-gray-100">
                 <Sidebar />
-                <div className="flex-1 ml-[290px]">
+                <div className="flex-1 md:ml-[290px] ml-0">
                     <Header />
                     <div className="flex items-center justify-center h-[calc(100vh-80px)]">
                         <div className="text-center">
@@ -188,7 +239,7 @@ const VendorWallet = () => {
     return (
         <div className="flex min-h-screen bg-gray-100">
             <Sidebar />
-            <div className="flex-1 ml-[290px] overflow-x-hidden">
+            <div className="flex-1 md:ml-[290px] ml-0 overflow-x-hidden">
                 <Header />
                 <div className="p-4 sm:p-6 lg:p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-6xl mx-auto">
@@ -209,7 +260,7 @@ const VendorWallet = () => {
                         </div>
 
                         {/* Balance Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                             <BalanceCard
                                 title="Total Balance"
                                 amount={walletData.balance}
@@ -227,6 +278,12 @@ const VendorWallet = () => {
                                 amount={walletData.locked}
                                 color="bg-gradient-to-br from-red-500 to-red-600"
                                 icon="🔒"
+                            />
+                            <BalanceCard
+                                title="Pending Balance"
+                                amount={walletData.pending}
+                                color="bg-gradient-to-br from-yellow-500 to-yellow-600"
+                                icon="⏳"
                             />
                         </div>
 
@@ -249,7 +306,7 @@ const VendorWallet = () => {
                         {/* Tabs */}
                         <div className="bg-white rounded-lg card-shadow mb-8">
                             <div className="border-b border-gray-200 flex">
-                                {['overview', 'transactions', 'settings'].map((tab) => (
+                                {['overview', 'transactions', 'ledger', 'settings'].map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
@@ -298,26 +355,75 @@ const VendorWallet = () => {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
-                                                {transactions.map((txn) => (
-                                                    <tr key={txn.id} className="hover:bg-gray-50">
-                                                        <td className="px-4 py-2 text-sm text-gray-600">{txn.date}</td>
-                                                        <td className="px-4 py-2 text-sm">
-                                                            <span className={`inline-flex items-center gap-1 ${txn.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                                                                {txn.type === 'credit' ? <FaPlus size={12} /> : <FaMinus size={12} />}
-                                                                {txn.type.toUpperCase()}
-                                                            </span>
-                                                        </td>
-                                                        <td className={`px-4 py-2 text-sm font-medium ${txn.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                                                            {txn.type === 'credit' ? '+' : '-'}₹{txn.amount.toLocaleString('en-IN')}
-                                                        </td>
-                                                        <td className="px-4 py-2 text-sm text-gray-600">{txn.description}</td>
-                                                        <td className="px-4 py-2 text-sm">
-                                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full text-green-700 bg-green-100">
-                                                                {txn.status}
-                                                            </span>
+                                                {transactions.length > 0 ? (
+                                                    transactions.map((txn) => (
+                                                        <tr key={txn.id} className="hover:bg-gray-50">
+                                                            <td className="px-4 py-2 text-sm text-gray-600">{txn.date}</td>
+                                                            <td className="px-4 py-2 text-sm">
+                                                                <span className={`inline-flex items-center gap-1 ${txn.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                                                                    {txn.type === 'credit' ? <FaPlus size={12} /> : <FaMinus size={12} />}
+                                                                    {txn.type.toUpperCase()}
+                                                                </span>
+                                                            </td>
+                                                            <td className={`px-4 py-2 text-sm font-medium ${txn.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                                                                {txn.type === 'credit' ? '+' : '-'}₹{txn.amount.toLocaleString('en-IN')}
+                                                            </td>
+                                                            <td className="px-4 py-2 text-sm text-gray-600">{txn.description}</td>
+                                                            <td className="px-4 py-2 text-sm">
+                                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${txn.status === 'completed' ? 'text-green-700 bg-green-100' : 'text-yellow-700 bg-yellow-100'}`}>
+                                                                    {txn.status}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="5" className="px-4 py-8 text-center text-sm text-gray-500">
+                                                            No transactions found for this wallet.
                                                         </td>
                                                     </tr>
-                                                ))}
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                {activeTab === 'ledger' && (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Balance</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                                {ledgerData.length > 0 ? (
+                                                    ledgerData.map((entry) => (
+                                                        <tr key={entry.id} className="hover:bg-gray-50">
+                                                            <td className="px-4 py-2 text-sm text-gray-600">{entry.date}</td>
+                                                            <td className="px-4 py-2 text-sm font-medium text-gray-900">{entry.type}</td>
+                                                            <td className="px-4 py-2 text-sm font-medium text-gray-900">₹{Number(entry.amount).toLocaleString('en-IN')}</td>
+                                                            <td className="px-4 py-2 text-sm text-gray-600">₹{Number(entry.balance).toLocaleString('en-IN')}</td>
+                                                            <td className="px-4 py-2 text-sm text-gray-600">{entry.description}</td>
+                                                            <td className="px-4 py-2 text-sm">
+                                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${entry.status === 'completed' ? 'text-green-700 bg-green-100' : 'text-yellow-700 bg-yellow-100'}`}>
+                                                                    {entry.status}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="6" className="px-4 py-8 text-center text-sm text-gray-500">
+                                                            No ledger entries found for this wallet.
+                                                        </td>
+                                                    </tr>
+                                                )}
                                             </tbody>
                                         </table>
                                     </div>

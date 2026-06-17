@@ -201,35 +201,39 @@ const Accounts = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredData.map((payment) => (
-                            <tr key={payment._id} className="border-b hover:bg-gray-50 transition">
-                                <td className="px-6 py-4 text-sm text-gray-800 font-medium">
-                                    {payment._id?.slice(-8)}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-600">
-                                    {payment.customerName || 'N/A'}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-600">
-                                    ₹{payment.amount || 0}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-600">
-                                    {payment.paymentMethod || 'Cash'}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-600">
-                                    {payment.date ? new Date(payment.date).toLocaleDateString() : 'N/A'}
-                                </td>
-                                <td className="px-6 py-4 text-sm">
-                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${payment.status === 'completed'
-                                        ? 'bg-green-100 text-green-800'
-                                        : payment.status === 'pending'
-                                            ? 'bg-yellow-100 text-yellow-800'
-                                            : 'bg-red-100 text-red-800'
-                                        }`}>
-                                        {payment.status || 'Pending'}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
+                        {filteredData.map((payment) => {
+                            const paymentStatus = payment.status?.toString().toLowerCase();
+                            const isPendingPayment = paymentStatus === 'pending_payment' || paymentStatus === 'pending';
+                            return (
+                                <tr key={payment._id} className="border-b hover:bg-gray-50 transition">
+                                    <td className="px-6 py-4 text-sm text-gray-800 font-medium">
+                                        {payment._id?.slice(-8)}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-600">
+                                        {payment.customerName || 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-600">
+                                        ₹{payment.amount || 0}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-600">
+                                        {payment.paymentMethod || 'Cash'}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-600">
+                                        {payment.date ? new Date(payment.date).toLocaleDateString() : 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm">
+                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${paymentStatus === 'completed'
+                                            ? 'bg-green-100 text-green-800'
+                                            : isPendingPayment
+                                                ? 'bg-yellow-100 text-yellow-800'
+                                                : 'bg-red-100 text-red-800'
+                                            }`}>
+                                            {payment.status || 'Pending'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             );
@@ -278,7 +282,7 @@ const Accounts = () => {
     return (
         <div className="flex min-h-screen">
             <Sidebar />
-            <div className="flex-1 ml-[290px] overflow-x-hidden">
+            <div className="flex-1 md:ml-[290px] ml-0 overflow-x-hidden">
                 <Header />
                 <div className="p-6 bg-gray-50 min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="flex justify-between items-center mb-6">

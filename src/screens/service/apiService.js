@@ -1,11 +1,13 @@
 // Use relative path for proxy in development, full URL in production
 const API_BASE_URL = import.meta.env.DEV ? '/api/v1' : import.meta.env.VITE_API_URL || '/api/v1';
+const API_W1_BASE_URL = import.meta.env.DEV ? '/api/w1' : import.meta.env.VITE_API_W1_URL || '/api/w1';
 
-// console.log('🔧 API Service Initialized with BASE URL:', API_BASE_URL);
+// console.log('🔧 API Service Initialized with BASE URL:', API_BASE_URL, 'W1 URL:', API_W1_BASE_URL);
 
 class APIService {
     constructor() {
         this.baseURL = API_BASE_URL;
+        this.w1BaseURL = API_W1_BASE_URL;
     }
 
     getToken() {
@@ -35,9 +37,9 @@ class APIService {
         return headers;
     }
 
-    async request(endpoint, method = 'GET', body = null, isFormData = false) {
+    async request(endpoint, method = 'GET', body = null, isFormData = false, baseURL = this.baseURL) {
         try {
-            const url = `${this.baseURL}${endpoint}`;
+            const url = `${baseURL}${endpoint}`;
             const options = {
                 method,
                 headers: this.getHeaders(isFormData),
@@ -86,6 +88,10 @@ class APIService {
             console.error(`API Error [${method} ${endpoint}]:`, error);
             return { success: false, error: error.message || 'Unknown network error', status: null };
         }
+    }
+
+    async requestW1(endpoint, method = 'GET', body = null, isFormData = false) {
+        return this.request(endpoint, method, body, isFormData, this.w1BaseURL);
     }
 
     // ============== AUTHENTICATION APIs ==============
@@ -192,8 +198,11 @@ class APIService {
         sellOrder: (payload) => this.request('/orders/sell', 'POST', payload),
         redeemOrder: (payload) => this.request('/orders/redeem', 'POST', payload),
         cancelOrder: (orderId) => this.request(`/orders/${orderId}/cancel`, 'POST'),
-        getSummary: () => this.request('/orders/reports/summary', 'GET'),
+        getSummary: (params = {}) => this.request(`/orders/reports/summary?${new URLSearchParams(params)}`, 'GET'),
         getTransactions: (params = {}) => this.request(`/orders/reports/transactions?${new URLSearchParams(params)}`, 'GET'),
+        getAdminPending: (params = {}) => this.request(`/orders/admin/pending?${new URLSearchParams(params)}`, 'GET'),
+        approveOrder: (orderId, payload = {}) => this.request(`/orders/${orderId}/approve`, 'POST', payload),
+        rejectOrder: (orderId, payload) => this.request(`/orders/${orderId}/reject`, 'POST', payload),
     };
 
     // ============== PAYMENTS APIs ==============
@@ -225,6 +234,7 @@ class APIService {
         // Balance and Transactions
         getBalance: () => this.request('/wallet/balance', 'GET'),
         getTransactions: (params = {}) => this.request(`/wallet/transactions?${new URLSearchParams(params)}`, 'GET'),
+        getLedger: () => this.requestW1('/wallet/ledger', 'GET'),
 
         // Deposits
         initiateDeposit: (payload) => this.request('/wallet/deposit/initiate', 'POST', payload),
@@ -239,6 +249,7 @@ class APIService {
         requestOtp: (payload) => this.request('/wallet/otp/request', 'POST', payload),
 
         // Admin functions
+        getAdminBalance: (userId) => this.request(`/wallet/admin/balance?userId=${encodeURIComponent(userId)}`, 'GET'),
         blockWithdrawals: (userId, payload) => this.request(`/wallet/admin/${userId}/block-withdrawals`, 'POST', payload),
 
         // Commodities
@@ -248,8 +259,8 @@ class APIService {
 
     // ============== KYC APIs ==============
     kyc = {
-        getPending: (params = {}) => this.request(`/kyc/pending?${new URLSearchParams(params)}`, 'GET'),
-        getApproved: (params = {}) => this.request(`/kyc/approved?${new URLSearchParams(params)}`, 'GET'),
+        getPending: (params = {}) => this.request(`/kyc/pending?${new URLSearchParams({ page: 1, limit: 20, sortBy: 'submittedAt', sortOrder: 'asc', ...params })}`, 'GET'),
+        getApproved: (params = {}) => this.request(`/kyc/approved?${new URLSearchParams({ page: 1, limit: 20, sortBy: 'reviewedAt', sortOrder: 'desc', ...params })}`, 'GET'),
         reviewKYC: (kycId, payload) => this.request(`/kyc/${kycId}/review`, 'POST', payload),
     };
 
@@ -280,6 +291,12 @@ class APIService {
 
             // All Customers LTV Report: /analytics/vendor/ltv/all?limit=50
             getAllCustomersLtv: (params = {}) => this.request(`/analytics/vendor/ltv/all?${new URLSearchParams(params)}`, 'GET'),
+        }
+    };
+
+    admin = {
+        analytics: {
+            getOverview: (params = {}) => this.requestW1(`/admin/analytics?${new URLSearchParams(params)}`, 'GET'),
         }
     };
 

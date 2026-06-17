@@ -486,7 +486,7 @@ const Delivered = () => {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <div className="flex-1 ml-[290px] overflow-x-hidden">
+      <div className="flex-1 md:ml-[290px] ml-0 overflow-x-hidden">
         <Header />
         <div className="p-6 bg-gray-50 min-h-[calc(100vh-80px)] overflow-y-auto">
           {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">

@@ -19,6 +19,9 @@ const Inventory = () => {
     const [error, setError] = useState("");
     const [fetchAttempted, setFetchAttempted] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
+    const [lowStockProducts, setLowStockProducts] = useState([]);
+    const [lowStockLoading, setLowStockLoading] = useState(true);
+    const [lowStockError, setLowStockError] = useState("");
     const MAX_RETRIES = 3;
     const RETRY_DELAY = 3000; // 3 seconds between retries
 
@@ -96,6 +99,35 @@ const Inventory = () => {
         setRetryCount(0);
     };
 
+    const normalizeLowStockResponse = (result) => {
+        if (!result || !result.success || !result.data) return [];
+        const payload = result.data.data?.data || result.data.data || result.data;
+        if (Array.isArray(payload)) return payload;
+        if (payload && Array.isArray(payload.data)) return payload.data;
+        return [];
+    };
+
+    const fetchLowStockProducts = async () => {
+        setLowStockLoading(true);
+        setLowStockError("");
+
+        try {
+            const result = await apiService.products.getLowStockProducts();
+            const rawProducts = normalizeLowStockResponse(result);
+            setLowStockProducts(rawProducts);
+        } catch (err) {
+            console.error("❌ Error fetching low stock products:", err);
+            setLowStockError(err.message || "Failed to load low stock products");
+            setLowStockProducts([]);
+        } finally {
+            setLowStockLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchLowStockProducts();
+    }, []);
+
     const inventoryByMetalData = {
         labels: inventoryReport?.byMetal ? Object.keys(inventoryReport.byMetal).filter(k => inventoryReport.byMetal[k] > 0) : [],
         datasets: [
@@ -137,7 +169,7 @@ const Inventory = () => {
         return (
             <div className="flex min-h-screen">
                 <Sidebar />
-                <div className="flex-1 ml-[290px] overflow-x-hidden">
+                <div className="flex-1 md:ml-[290px] ml-0 overflow-x-hidden">
                     <Header />
                     <div className="p-6 bg-gray-50 min-h-[calc(100vh-80px)] flex items-center justify-center">
                         <p className="text-gray-600">Loading inventory report...</p>
@@ -151,7 +183,7 @@ const Inventory = () => {
         return (
             <div className="flex min-h-screen">
                 <Sidebar />
-                <div className="flex-1 ml-[290px] overflow-x-hidden">
+                <div className="flex-1 md:ml-[290px] ml-0 overflow-x-hidden">
                     <Header />
                     <div className="p-6 bg-gray-50 min-h-[calc(100vh-80px)] flex items-center justify-center">
                         <div className="w-full max-w-md">
@@ -181,7 +213,7 @@ const Inventory = () => {
     return (
         <div className="flex min-h-screen">
             <Sidebar />
-            <div className="flex-1 ml-[290px] overflow-x-hidden">
+            <div className="flex-1 md:ml-[290px] ml-0 overflow-x-hidden">
                 <Header />
                 <div className="p-6 bg-gray-50 min-h-[calc(100vh-80px)] overflow-y-auto">
                     <h2 className="text-3xl font-bold text-gray-800 mb-6">Inventory Report</h2>
@@ -211,17 +243,40 @@ const Inventory = () => {
                                             <thead className="bg-gray-50">
                                                 <tr>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current Stock</th>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Threshold</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
-                                                <tr>
-                                                    <td colSpan="3" className="text-center py-8 text-gray-500">
-                                                        Low stock count: {inventoryReport.lowStock || 0} items<br />
-                                                        <small className="text-gray-400">Detailed list not available in current API</small>
-                                                    </td>
-                                                </tr>
+                                                {lowStockLoading ? (
+                                                    <tr>
+                                                        <td colSpan="4" className="text-center py-8 text-gray-500">
+                                                            Loading low stock products...
+                                                        </td>
+                                                    </tr>
+                                                ) : lowStockError ? (
+                                                    <tr>
+                                                        <td colSpan="4" className="text-center py-8 text-red-600">
+                                                            {lowStockError}
+                                                        </td>
+                                                    </tr>
+                                                ) : lowStockProducts.length > 0 ? (
+                                                    lowStockProducts.map((item, index) => (
+                                                        <tr key={item.id || item.sku || index}>
+                                                            <td className="px-6 py-4 text-sm text-gray-800">{item.name || item.sku || 'Unnamed Product'}</td>
+                                                            <td className="px-6 py-4 text-sm text-gray-500">{item.sku || item.code || '-'}</td>
+                                                            <td className="px-6 py-4 text-sm text-gray-500">{item.stockQuantity ?? item.stock ?? 0}</td>
+                                                            <td className="px-6 py-4 text-sm text-gray-500">{item.lowStockThreshold ?? '-'}</td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="4" className="text-center py-8 text-gray-500">
+                                                            No low stock products found.
+                                                        </td>
+                                                    </tr>
+                                                )}
                                             </tbody>
                                         </table>
                                     </div>

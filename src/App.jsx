@@ -6,6 +6,7 @@ import { HeaderProvider } from './Contexts/HeaderContext';    // ✅
 
 // Auth Components
 import Login from './components/Auth/SignIn';
+import ForgotPassword from './components/Auth/ForgotPassword';
 import Register from './screens/Auth/Register';
 import ProtectedRoute from './components/RoleProtectedRoute';
 
@@ -37,6 +38,7 @@ import AllCustomers from './screens/superadmin/AllCustomers';
 import KycApprovals from './screens/superadmin/KycApprovals';
 import SuperAdminReports from './screens/superadmin/Reports';
 import SuperAdminVendors from './screens/superadmin/Vendors';
+import MasterData from './screens/superadmin/MasterData';
 import SuperAdminProfile from './screens/superadmin/Profile';
 import SuperAdminSettings from './screens/superadmin/Settings';
 
@@ -54,6 +56,7 @@ function App() {
             {/* <Route path="/" element={<AuthProvider />} /> */}
             {/* <Route path="/login" element={<Login />} /> */}
             <Route path="/signin" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             {/* <Route path="/register" element={<Register />} /> */}
 
             {/* SuperAdmin Routes */}
@@ -126,6 +129,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
                   <SuperAdminVendors />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/master-data"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
+                  <MasterData />
                 </ProtectedRoute>
               }
             />

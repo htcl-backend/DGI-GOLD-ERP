@@ -12,7 +12,6 @@ import { IoMdPin } from "react-icons/io";
 import { vendorNavItems } from "./Layout/VendorLayout";
 
 const SidebarNew = () => {
-    // ✅ Always use vendor nav items - super admin role is hidden
     const navItems = vendorNavItems;
 
     const iconMap = {
@@ -33,7 +32,7 @@ const SidebarNew = () => {
     };
 
     return (
-        <div className="fixed left-0 top-0 w-[290px] sidebar-shadow h-screen overflow-y-auto z-50 bg-white text-black">
+        <div className="hidden md:block fixed left-0 top-0 w-full md:w-[290px] sidebar-shadow h-screen overflow-y-auto z-50 bg-white text-black">
             <div className="flex items-center gap-[12px] relative pl-[15px] pt-[12px]">
                 <img src={logo} alt="" className="w-[43px] h-[48px] rounded-[6px]" />
                 <span className="text-[#a66002] text-[24px] font-[700]">DGI GOLD</span>

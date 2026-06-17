@@ -92,6 +92,27 @@ const VendorDashboardContent = () => {
     });
     const navigate = useNavigate();
 
+    const normalizeHoldingsSummary = (rawSummary) => {
+        if (!rawSummary || typeof rawSummary !== 'object') return null;
+
+        const totals = rawSummary.totals || rawSummary.total || {};
+        const ui = rawSummary.ui || {};
+        const metals = Array.isArray(rawSummary.metals) ? rawSummary.metals : [];
+
+        return {
+            ...rawSummary,
+            totals,
+            metals,
+            ui,
+            totalValue: totals.currentValueINR ?? totals.currentValue ?? totals.totalValue ?? 0,
+            totalGain: totals.profitLossINR ?? totals.profitLoss ?? 0,
+            totalInvestment: totals.investmentINR ?? totals.investment ?? 0,
+            returnPercent: totals.returnPercent ?? 0,
+            distributionChart: ui.distributionChart ?? [],
+            progressBar: ui.progressBar ?? {},
+        };
+    };
+
     // Debug logging
     useEffect(() => {
         console.log('🔍 VendorDashboard: user=', user);
@@ -107,7 +128,7 @@ const VendorDashboardContent = () => {
         const fetchSummaries = async () => {
             try {
                 // Fetch orders summary
-                const orderResult = await apiService.orders.getSummary();
+                const orderResult = await apiService.orders.getSummary({ period: '7d' });
                 if (orderResult.success) {
                     setOrdersSummary(orderResult.data.data || orderResult.data);
                 } else {
@@ -141,9 +162,10 @@ const VendorDashboardContent = () => {
 
             try {
                 // Fetch holdings summary
-                const holdingResult = await apiService.holdings.getSummary();
+                const  holdingResult = await apiService.holdings.getSummary();
                 if (holdingResult.success) {
-                    setHoldingsSummary(holdingResult.data.data || holdingResult.data);
+                    const summaryPayload = holdingResult.data.data || holdingResult.data;
+                    setHoldingsSummary(normalizeHoldingsSummary(summaryPayload));
                 } else {
                     // Fallback: use default holdings data
                     setHoldingsSummary({
@@ -313,7 +335,7 @@ const VendorDashboardContent = () => {
     return (
         <div className="flex min-h-screen">
             <Sidebar />
-            <div className="flex-1 ml-[290px] overflow-x-hidden">
+            <div className="flex-1 md:ml-[290px] ml-0 overflow-x-hidden">
                 <Header />
                 <div className="p-4 sm:p-6 lg:p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-7xl mx-auto">

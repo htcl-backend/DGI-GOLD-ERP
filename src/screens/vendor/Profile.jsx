@@ -203,6 +203,12 @@ const VendorProfile = () => {
         }
     };
 
+    const triggerFileInput = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
     const handleSaveProfile = async () => {
         setSaveLoading(true);
         try {
@@ -295,7 +301,7 @@ const VendorProfile = () => {
     return (
         <div className="flex min-h-screen bg-gray-50">
             <Sidebar />
-            <div className="flex-1 ml-[290px]">
+            <div className="flex-1 md:ml-[290px] ml-0">
                 <Header />
                 <div className="p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-7xl mx-auto">

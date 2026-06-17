@@ -156,8 +156,9 @@ const ProductList = () => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleAddProduct = (e) => {
+    const handleAddProduct = async (e) => {
         e.preventDefault();
+
         const newProductPayload = {
             name: formData.name?.trim() || "Unnamed Product",
             description: formData.description?.trim() || "",
@@ -181,36 +182,52 @@ const ProductList = () => {
             standardShippingDays: 2,
         };
 
-        apiService
-            .request("/products", "POST", newProductPayload)
-            .then((response) => {
-                if (response.success) {
-                    alert("✅ Product added successfully!");
-                    fetchProducts();
-                    setFormData({
-                        code: "",
-                        material: "gold",
-                        name: "",
-                        purity: "999",
-                        stock: "",
-                        weight: "",
-                        price: "",
-                        description: "",
-                        markup: "",
-                        makingCharges: "",
-                        gst: "5",
-                        status: "DRAFT",
-                    });
-                    setSelectedFiles([]);
-                    setShowAddForm(false);
-                } else {
-                    const errorMsg = response.error || response.message || "Failed to add product";
-                    alert("❌ Error: " + errorMsg);
-                }
-            })
-            .catch((error) => {
-                alert("❌ Error adding product: " + (error.message || error));
-            });
+        try {
+            let response;
+
+            if (selectedFiles.length > 0) {
+                const formDataPayload = new FormData();
+                Object.entries(newProductPayload).forEach(([key, value]) => {
+                    if (value !== undefined && value !== null) {
+                        formDataPayload.append(key, value);
+                    }
+                });
+
+                selectedFiles.forEach((item, index) => {
+                    formDataPayload.append("images", item.file);
+                });
+
+                response = await apiService.request("/products", "POST", formDataPayload, true);
+            } else {
+                response = await apiService.request("/products", "POST", newProductPayload);
+            }
+
+            if (response.success) {
+                alert("✅ Product added successfully!");
+                fetchProducts();
+                setFormData({
+                    code: "",
+                    material: "gold",
+                    name: "",
+                    purity: "999",
+                    stock: "",
+                    weight: "",
+                    price: "",
+                    description: "",
+                    markup: "",
+                    makingCharges: "",
+                    gst: "5",
+                    status: "DRAFT",
+                });
+                setSelectedFiles([]);
+                setShowAddForm(false);
+            } else {
+                const errorMsg = response.error || response.message || "Failed to add product";
+                alert("❌ Error: " + errorMsg);
+            }
+        } catch (error) {
+            alert("❌ Error adding product: " + (error.message || error));
+        }
     };
 
     const handleUpdateProductStatus = async (productId, newStatus) => {

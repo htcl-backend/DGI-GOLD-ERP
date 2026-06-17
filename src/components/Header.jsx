@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useData } from "../Contexts/DataContext";
 import { useAuth } from "../Contexts/AuthContext";
 import { vendorNavItems } from "./Layout/VendorLayout";
+import { superAdminNavItems } from "./Layout/SuperAdminLayout";
 
 // Header component
 const Header = () => {
@@ -15,12 +16,20 @@ const Header = () => {
   const location = useLocation();
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const allNavItems = [...vendorNavItems, ...superAdminNavItems];
   // Find the current nav item to get its label for the title
-  const currentNavItem = vendorNavItems.find(item => location.pathname.startsWith(item.path));
+  const currentNavItem = allNavItems.find(item => location.pathname.startsWith(item.path));
   const pageTitle = currentNavItem ? currentNavItem.label : "Dashboard";
 
   // Use user's profile image or fallback to default
-  const profileImage = user?.profileImage || defaultProfileImg;
+  const profileImage =
+    user?.profileImage ||
+    user?.profilePhotoUrl ||
+    user?.avatar ||
+    user?.photoURL ||
+    user?.profile_image ||
+    user?.image ||
+    defaultProfileImg;
 
   // Toggle the dropdown menu when profile is clicke....
   const toggleDropdown = () => {
@@ -30,7 +39,7 @@ const Header = () => {
   const navigate = useNavigate();
   return (
     <div className="flex-1">
-      <div className="flex items-center justify-between h-[72px] header-shadow px-4">
+      <div className="relative flex items-center justify-between h-[72px] header-shadow px-4">
         <span className="text-2xl font-[700] text-[#cc7b25ff]">{pageTitle}</span>
         <div className="flex items-center justify-center gap-4">
           <div>
@@ -64,7 +73,7 @@ const Header = () => {
             />
             {/* Dropdown menu */}
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-40 w-[150px] bg-white shadow-md rounded-md">
+              <div className="absolute right-4 mt-2 w-[150px] bg-white shadow-md rounded-md z-50">
                 <ul className="text-gray-800">
                   <li
                     className="px-4 py-2 hover:bg-gray-200 cursor-pointer"

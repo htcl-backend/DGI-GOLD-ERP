@@ -56,24 +56,37 @@ const Customer = () => {
   // ============================
   // 🔹 FETCH CUSTOMERS LIST
   // ============================
+  const normalizeCustomerResponse = (result) => {
+    if (!result) return [];
+    const layer1 = result.data ?? result;
+    const layer2 = layer1.data ?? layer1;
+    const payload = layer2.data ?? layer2;
+
+    if (Array.isArray(payload.customers)) return payload.customers;
+    if (Array.isArray(payload.results)) return payload.results;
+    if (Array.isArray(payload.items)) return payload.items;
+    if (Array.isArray(payload.data)) return payload.data;
+    return [];
+  };
+
   const fetchCustomers = async () => {
     setLoading(true);
     setErrorMessage("");
 
     try {
-      // ✅ GET /analytics/vendor/customers/list with pagination
-      const result = await apiService.analytics.vendor.getAllCustomers({ limit: 100, offset: 0 });
+      const result = await apiService.vendor.customers.getAll({ limit: 100, offset: 0 });
+      const customerList = normalizeCustomerResponse(result);
 
-      if (result.success && result.data) {
-        // The API may wrap the payload inside { data: { total, customers, pagination } }
-        const payload = result.data.data || result.data || {};
-        const customerList = payload.customers || [];
+      if (result.success && customerList.length > 0) {
         setCustomers(customerList);
         setFilteredCustomers(customerList);
         console.log(`✅ Loaded ${customerList.length} customers`, customerList);
+      } else if (result.success && customerList.length === 0) {
+        console.warn('⚠️ Customer API returned empty list', result);
+        setCustomers([]);
+        setFilteredCustomers([]);
       } else {
-        // Fallback to sample data when analytics API is unreachable
-        console.warn('⚠️ Analytics customers API failed, using local sample data');
+        console.warn('⚠️ Customer list API failed, using local sample data', result);
         const customerList = SAMPLE_CUSTOMERS;
         setCustomers(customerList);
         setFilteredCustomers(customerList);
@@ -96,41 +109,19 @@ const Customer = () => {
     setErrorMessage("");
 
     try {
-      // Compose customer details from analytics endpoints (P&L + Metrics)
-      const pnlResult = await apiService.analytics.vendor.getCustomerPnl(customerId);
-      const metricsResult = await apiService.analytics.vendor.getCustomerMetrics(customerId);
+      const customerFromList = customers.find((c) => c.customerId === customerId);
+      if (customerFromList) {
+        setSelectedCustomer(customerFromList);
+        return;
+      }
 
-      if (pnlResult.success || metricsResult.success) {
-        const pnlData = pnlResult.data?.data || pnlResult.data || {};
-        const metricsData = metricsResult.data?.data || metricsResult.data || {};
-
-        const composed = {
-          customerId: pnlData.customerId || metricsData.customerId || customerId,
-          customerName: pnlData.customerName || metricsData.customerName || 'N/A',
-          email: metricsData.email || pnlData.email || 'N/A',
-          phoneNumber: metricsData.phoneNumber || pnlData.phoneNumber || 'N/A',
-          joinedDate: pnlData.joinedDate || metricsData.joinedDate,
-          totalOrders: pnlData.orderCount || metricsData.orderCount || 0,
-          totalSpent: pnlData.totalInvestment || metricsData.totalInvested || 0,
-          currentMonthSpent: pnlData.currentMonthSpent || 0,
-          previousMonthSpent: pnlData.previousMonthSpent || 0,
-          monthlySpentBreakdown: pnlData.monthlySpentBreakdown || [],
-          orders: pnlData.orders || [],
-          pnl: pnlData,
-          metrics: metricsData,
-        };
-
-        setSelectedCustomer(composed);
-        console.log('✅ Customer details loaded (composed from analytics)');
+      // Fallback: if the customer is not already in list, fetch details from API
+      const result = await apiService.vendor.customers.getById(customerId);
+      if (result.success && result.data) {
+        const payload = result.data.data || result.data || {};
+        setSelectedCustomer(payload);
       } else {
-        // Fallback: try to find customer in local sample list
-        console.warn('⚠️ Analytics customer details API failed, falling back to sample data');
-        const sample = (customers || []).find(c => c.customerId === customerId) || SAMPLE_CUSTOMERS.find(c => c.customerId === customerId);
-        if (sample) {
-          setSelectedCustomer(sample);
-        } else {
-          throw new Error((pnlResult.error || metricsResult.error) || 'Invalid response for customer details');
-        }
+        throw new Error(result.error || 'Failed to load customer details');
       }
     } catch (err) {
       console.error("Error fetching customer details:", err);
@@ -166,7 +157,7 @@ const Customer = () => {
     <div className="flex overflow-x-hidden">
       <Sidebar />
 
-      <div className="flex-1 ml-[290px] overflow-hidden">
+      <div className="flex-1 md:ml-[290px] ml-0 overflow-hidden">
         <Header />
 
         <div className="p-6 bg-gray-50 min-h-[calc(100vh-80px)] overflow-y-auto overflow-x-hidden">
@@ -261,8 +252,8 @@ const Customer = () => {
           🔹 CUSTOMER DETAILS MODAL
       ============================ */}
       {selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-50 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white/95 backdrop-saturate-150 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/80">
             {/* Modal Header */}
             <div className="sticky top-0 bg-white p-5 flex justify-between items-center border-b z-10">
               <div className="flex items-center gap-3">

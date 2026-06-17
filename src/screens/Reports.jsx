@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
-import { apiFetch } from "../api";
-import { useData } from "../Contexts/DataContext";
+import apiService from "./service/apiService";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -20,81 +19,240 @@ ChartJS.register(
 );
 
 const Reports = () => {
-  const { allOrders } = useData();
   const [activeTab, setActiveTab] = useState("gold");
+  const [reportSummary, setReportSummary] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState("");
+  const [transactionsError, setTransactionsError] = useState("");
 
-  // Process reports from orders data
-  const { goldReports, silverReports } = useMemo(() => {
-    const gold = [];
-    const silver = [];
+  useEffect(() => {
+    const fetchReports = async () => {
+      setLoading(true);
+      setSummaryError("");
+      setTransactionsError("");
 
-    allOrders.forEach(order => {
-      const report = {
-        customerName: order.customerName || 'N/A',
-        weight: order.weight,
-        purity: order.purity,
-        price: order.price,
-        totalAmount: order.totalAmount,
-        date: order.date,
-        delivered: order.delivered
-      };
-
-      if (order.category === 'gold') {
-        gold.push(report);
-      } else if (order.category === 'silver') {
-        silver.push(report);
+      try {
+        const summaryResult = await apiService.orders.getSummary({ period: '7d' });
+        if (summaryResult.success) {
+          setReportSummary(summaryResult.data?.data || summaryResult.data || {});
+        } else {
+          setSummaryError(summaryResult.error || 'Failed to load summary report');
+        }
+      } catch (error) {
+        setSummaryError(error.message || 'Failed to load summary report');
       }
+
+      try {
+        const txResult = await apiService.orders.getTransactions({ page: 1, limit: 50 });
+        if (txResult.success) {
+          const payload = txResult.data?.data || txResult.data || {};
+          const txList = Array.isArray(payload) ? payload : payload.transactions || [];
+          setTransactions(txList);
+        } else {
+          setTransactionsError(txResult.error || 'Failed to load transaction reports');
+        }
+      } catch (error) {
+        setTransactionsError(error.message || 'Failed to load transaction reports');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, []);
+
+  const transactionMatchesMetal = (transaction, metal) => {
+    if (!transaction) return false;
+    if (transaction.metal) {
+      return transaction.metal.toUpperCase() === metal;
+    }
+    if (Array.isArray(transaction.items)) {
+      return transaction.items.some(item => item.metalType?.toUpperCase() === metal);
+    }
+    return false;
+  };
+
+  const filteredTransactions = useMemo(() => {
+    const metal = activeTab.toUpperCase();
+    return transactions.filter(tx => transactionMatchesMetal(tx, metal));
+  }, [transactions, activeTab]);
+
+  const getTransactionMetalTypes = (transaction) => {
+    if (!transaction) return [];
+    if (transaction.metal) {
+      return [transaction.metal.toUpperCase()];
+    }
+    if (Array.isArray(transaction.items)) {
+      return transaction.items
+        .map(item => item.metalType?.toUpperCase())
+        .filter(Boolean);
+    }
+    return [];
+  };
+
+  const reportChartData = useMemo(() => {
+    const dateMap = {
+      GOLD: {},
+      SILVER: {},
+    };
+
+    transactions.forEach(tx => {
+      const ts = tx.createdAt?.seconds ? tx.createdAt.seconds * 1000 : tx.createdAt ? new Date(tx.createdAt).getTime() : Date.now();
+      const dateKey = new Date(ts).toLocaleDateString();
+      const amount = tx.totalAmountINR || tx.totalAmount || tx.pricing?.totalAmount || 0;
+      const metals = getTransactionMetalTypes(tx);
+
+      metals.forEach(metal => {
+        if (!dateMap[metal]) dateMap[metal] = {};
+        dateMap[metal][dateKey] = (dateMap[metal][dateKey] || 0) + Number(amount || 0);
+      });
     });
 
-    return { goldReports: gold, silverReports: silver };
-  }, [allOrders]);
+    const labels = Array.from(
+      new Set([
+        ...Object.keys(dateMap.GOLD || {}),
+        ...Object.keys(dateMap.SILVER || {}),
+      ])
+    ).sort((a, b) => new Date(a) - new Date(b));
 
-  const currentReports = activeTab === "gold" ? goldReports : silverReports;
+    const goldData = labels.map(label => Number(dateMap.GOLD[label] || 0));
+    const silverData = labels.map(label => Number(dateMap.SILVER[label] || 0));
 
-  // Sort reports by date for the chart
-  const sortedReports = [...currentReports].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const combinedData = labels.map(label => goldData[labels.indexOf(label)] + silverData[labels.indexOf(label)]);
 
-  const reportChartData = {
-    labels: sortedReports.map(report => new Date(report.date).toLocaleDateString()),
-    datasets: [
-      {
-        label: `${activeTab === 'gold' ? 'Gold' : 'Silver'} Sales Amount`,
-        data: sortedReports.map(report => report.totalAmount),
-        borderColor: '#c27803', // amber-600
-        backgroundColor: 'rgba(194, 120, 3, 0.1)',
-        fill: true,
-        tension: 0.4,
-      },
-    ],
-  };
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Combined Transaction Value',
+          data: combinedData,
+          borderColor: '#0f172a',
+          backgroundColor: 'rgba(15, 23, 42, 0.08)',
+          fill: false,
+          tension: 0.4,
+          borderWidth: 3,
+          pointRadius: 0,
+          pointHoverRadius: 6,
+        },
+        {
+          label: 'Gold Transaction Value',
+          data: goldData,
+          borderColor: '#f97316',
+          backgroundColor: 'rgba(249, 115, 22, 0.08)',
+          fill: false,
+          tension: 0.4,
+          borderWidth: 3,
+          pointRadius: 0,
+          pointHoverRadius: 6,
+        },
+        {
+          label: 'Silver Transaction Value',
+          data: silverData,
+          borderColor: '#14b8a6',
+          backgroundColor: 'rgba(20, 184, 166, 0.08)',
+          fill: false,
+          tension: 0.4,
+          borderWidth: 3,
+          pointRadius: 0,
+          pointHoverRadius: 6,
+        },
+      ],
+    };
+  }, [transactions]);
 
   const reportChartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          usePointStyle: true,
+          pointStyle: 'circle',
+          padding: 20,
+        },
       },
       title: {
         display: true,
-        text: `Daily Sales for ${activeTab === 'gold' ? 'Gold' : 'Silver'}`,
+        text: 'Gold & Silver Transaction Value',
+        font: {
+          size: 16,
+          weight: '600',
+        },
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          label: (context) => {
+            const value = context.parsed.y || 0;
+            return `${context.dataset.label}: ₹${value.toLocaleString()}`;
+          },
+        },
+      },
+    },
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    elements: {
+      line: {
+        tension: 0.4,
+        borderJoinStyle: 'round',
+        borderCapStyle: 'round',
+      },
+      point: {
+        radius: 0,
+        hoverRadius: 6,
       },
     },
     scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          maxRotation: 0,
+          autoSkip: true,
+          maxTicksLimit: 8,
+        },
+      },
       y: {
         beginAtZero: true,
+        grid: {
+          color: 'rgba(148, 163, 184, 0.2)',
+        },
         ticks: {
-          callback: function (value) {
-            return `₹${value / 1000}k`
-          }
-        }
-      }
-    }
+          callback: (value) => `₹${value / 1000}k`,
+        },
+      },
+    },
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'N/A';
+    const millis = timestamp.seconds ? timestamp.seconds * 1000 : new Date(timestamp).getTime();
+    return new Date(millis).toLocaleDateString();
+  };
+
+  const formatAmount = (transaction) => {
+    const amount = transaction.totalAmountINR || transaction.totalAmount || transaction.pricing?.totalAmount || 0;
+    return `₹${Number(amount).toLocaleString()}`;
+  };
+
+  const statusLabel = (transaction) => {
+    return transaction.paymentStatus || transaction.status || transaction.payment?.status || 'N/A';
+  };
+
+  const getCustomerName = (transaction) => {
+    return transaction.customerName || transaction.userId || transaction.tenantId || 'Unknown';
   };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gray-50">
       <Sidebar />
-      <div className="flex-1 lg:ml-[290px] ml-0 h-screen overflow-y-auto">
+      <div className="flex-1 lg:ml-72.5 ml-0 h-screen overflow-y-auto">
         <Header />
         <div className="p-4 sm:p-8 md:p-10 bg-gray-50">
           <div className="w-full max-w-7xl mx-auto">
@@ -126,9 +284,29 @@ const Reports = () => {
               </div>
             </div>
 
+            {/* Summary cards */}
+            {summaryError ? (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+                <strong className="font-bold">Summary Error:</strong> {summaryError}
+              </div>
+            ) : reportSummary ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {Object.entries(reportSummary).map(([key, value]) => (
+                  <div key={key} className="bg-white rounded-lg shadow-sm p-5 border border-gray-100">
+                    <p className="text-sm text-gray-500 uppercase tracking-wide">{key.replace(/([A-Z])/g, ' $1')}</p>
+                    <p className="mt-3 text-2xl font-semibold text-amber-600">{typeof value === 'number' ? `₹${value.toLocaleString()}` : JSON.stringify(value)}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-6">
+                No summary data available.
+              </div>
+            )}
+
             {/* Chart */}
             <div className="bg-white rounded-lg shadow-md mb-6 p-6">
-              <div className="w-full h-80">
+              <div className="w-full h-[320px]">
                 <Line options={reportChartOptions} data={reportChartData} />
               </div>
             </div>
@@ -168,36 +346,23 @@ const Reports = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {currentReports.map((report, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm text-gray-900 break-words">
-                          {report.customerName}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 break-words">
-                          {report.weight}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 break-words">
-                          {report.purity}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 break-words">
-                          {report.price}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 break-words">
-                          {report.totalAmount}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 break-words">
-                          {report.date}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${report.delivered
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                            }`}>
-                            {report.delivered ? "Delivered" : "Pending"}
-                          </span>
-                        </td>
+                    {filteredTransactions.length > 0 ? (
+                      filteredTransactions.map(tx => (
+                        <tr key={tx.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 text-sm text-gray-900 wrap-break-word">{tx.orderNumber || tx.id}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 wrap-break-word">{getCustomerName(tx)}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 wrap-break-word">{tx.type || 'N/A'}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 wrap-break-word">{tx.metal || tx.items?.[0]?.metalType || 'N/A'}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 wrap-break-word">{formatAmount(tx)}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 wrap-break-word">{statusLabel(tx)}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 wrap-break-word">{formatDate(tx.createdAt)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7" className="px-6 py-8 text-center text-gray-500">{transactionsError || 'No transactions found for this metal.'}</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>

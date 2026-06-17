@@ -30,7 +30,7 @@ const Profile = () => {
         return (
             <div className="flex min-h-screen">
                 <Sidebar />
-                <div className="flex-1 ml-[290px]">
+                <div className="flex-1 md:ml-[290px] ml-0">
                     <Header />
                     <div className="flex items-center justify-center h-screen bg-gray-50">
                         <div className="text-red-600">Please login to view your profile.</div>
@@ -43,7 +43,7 @@ const Profile = () => {
     return (
         <div className="flex min-h-screen bg-gray-50">
             <Sidebar />
-            <div className="flex-1 ml-[290px]">
+            <div className="flex-1 md:ml-[290px] ml-0">
                 <Header />
                 <div className="p-8 min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-6xl mx-auto">

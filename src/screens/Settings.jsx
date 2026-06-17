@@ -233,7 +233,7 @@
 //   return (
 //     <div className="flex min-h-screen">
 //       <Sidebar />
-//       <div className="flex-1 ml-[290px] overflow-x-hidden">
+//       <div className="flex-1 md:ml-[290px] ml-0 overflow-x-hidden">
 //         <Header />
 //         <div className="p-6 bg-gray-50 min-h-[calc(100vh-80px)] overflow-y-auto">
 //           <div className="max-w-4xl mx-auto">

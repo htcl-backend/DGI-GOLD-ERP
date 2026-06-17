@@ -63,16 +63,14 @@ const ForgotPassword = () => {
               Back to Sign In
             </a>
           </div>
+
+          <button
+            type="submit"
+            className="w-full py-2 mt-4 bg-[#CC7B25FF] text-white rounded-md hover:bg-[#f5c688] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Verify OTP
+          </button>
         </form>
-
-        {/* otp verify button      */}
-
-        <button
-          type="submit"
-          className="w-full py-2 mt-4 bg-[#CC7B25FF] text-white rounded-md hover:bg-[#f5c688] focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          Verify OTP
-        </button>
       </div>
     </div>
   );

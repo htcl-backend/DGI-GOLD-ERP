@@ -74,7 +74,7 @@ const OrdersAPI = () => {
             setLoading(true);
             setSummaryError("");
             console.log('🔄 Fetching order summary...');
-            const result = await apiService.request('/orders/reports/summary', 'GET');
+            const result = await apiService.orders.getSummary({ period: '7d' });
 
             if (result && result.success && result.data) {
                 const summaryData = result.data.data || result.data;
@@ -164,7 +164,7 @@ const OrdersAPI = () => {
         <div>
             <div className="flex">
                 <Sidebar />
-                <div className="w-full ml-[290px]">
+                <div className="w-full md:ml-[290px] ml-0">
                     <Header />
                     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

@@ -253,7 +253,7 @@ const VendorProfile = () => {
         return (
             <div className="flex min-h-screen bg-gray-100">
                 <Sidebar />
-                <div className="flex-1 ml-[290px]">
+                <div className="flex-1 md:ml-[290px] ml-0">
                     <Header />
                     <div className="flex items-center justify-center h-[calc(100vh-80px)]">
                         <div className="text-center">
@@ -269,7 +269,7 @@ const VendorProfile = () => {
     return (
         <div className="flex min-h-screen bg-gray-100">
             <Sidebar />
-            <div className="flex-1 ml-[290px] overflow-x-hidden">
+            <div className="flex-1 md:ml-[290px] ml-0 overflow-x-hidden">
                 <Header />
                 <div className="p-4 sm:p-6 lg:p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-4xl mx-auto">

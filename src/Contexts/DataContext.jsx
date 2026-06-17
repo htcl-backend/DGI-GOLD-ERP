@@ -273,6 +273,17 @@ export const DataProvider = ({ children }) => {
         return dummyNotifications[userRole] || [];
     }, [user]);
 
+    const extractArrayFromResponse = (response) => {
+        if (Array.isArray(response)) return response;
+        if (!response || typeof response !== 'object') return [];
+        if (Array.isArray(response.orders)) return response.orders;
+        if (Array.isArray(response.data)) return response.data;
+        if (Array.isArray(response.results)) return response.results;
+        if (Array.isArray(response.payload)) return response.payload;
+        if (Array.isArray(response.items)) return response.items;
+        return [];
+    };
+
     // Fetch Orders - using dummy data
     const fetchOrders = useCallback(async () => {
         if (!isAuthenticated) {
@@ -283,25 +294,18 @@ export const DataProvider = ({ children }) => {
             setError(null);
             console.log("🔄 Fetching orders from API...");
 
-            // ✅ Use vendor-specific orders endpoint
             const endpoint = '/vendor/orders?page=1&limit=100';
-
             const result = await apiService.request(endpoint, 'GET');
+            console.log('🔎 Orders API response:', result);
 
             if (result.success && result.data) {
-                // ✅ Handle paginated response: { orders: [...], total: 10, page: 1, ... }
-                let apiOrders = result.data.orders || result.data.data || result.data;
+                let apiOrders = extractArrayFromResponse(result.data);
 
-                // If it's a paginated response object with a 'data' array inside, extract it
-                if (apiOrders && typeof apiOrders === 'object' && !Array.isArray(apiOrders) && apiOrders.data && Array.isArray(apiOrders.data)) {
-                    apiOrders = apiOrders.data;
-                }
-
-                if (Array.isArray(apiOrders)) {
+                if (apiOrders.length > 0) {
                     setOrders(apiOrders);
                     console.log(`✅ Fetched ${apiOrders.length} orders.`);
                 } else {
-                    console.warn("⚠️ Orders data from API is not an array:", apiOrders);
+                    console.warn("⚠️ Orders data from API is not an array or could not be resolved:", result.data);
                     setOrders(dummyOrders);
                 }
             } else {
@@ -324,8 +328,8 @@ export const DataProvider = ({ children }) => {
             setError(null);
             console.log("🔄 Fetching products from API...");
 
-            // ✅ Use vendor-specific products endpoint
-            const endpoint = '/vendor/inventory?page=1&limit=100';
+            // ✅ Use the products endpoint for product list data
+            const endpoint = '/products?page=1&limit=100&status=ACTIVE';
 
             const result = await apiService.request(endpoint, 'GET');
 

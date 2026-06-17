@@ -158,7 +158,7 @@ Settings: http://localhost:3002/settings
 | 🔴 **HIGH** | Make Notifications user-specific | TODO |
 | 🟡 **MEDIUM** | Test/fix tablet responsive design | TODO |
 | 🟡 **MEDIUM** | Test text truncation on all pages | TODO |
-| 🟢 **LOW** | Test all API endpoints end-to-end | TODO |
+| 🟢 **LOW** |  | TODO |
 
 ---
 

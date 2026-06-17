@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FaRegEdit } from "react-icons/fa";
+import { FaRegEdit, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import apiService from "./service/apiService";
@@ -30,7 +30,7 @@ const Orders = () => {
       console.log(`🔄 Fetching orders for Vendor: ${vendorId}, User: ${userId} - Page ${page}...`);
 
       // ✅ Use vendor-specific orders endpoint
-      const endpoint = `/vendor/orders?page=${page}&limit=20`;
+      const endpoint = `/vendor/orders?page=${page}&limit=10`;
 
       const result = await apiService.request(endpoint, 'GET');
 
@@ -82,7 +82,7 @@ const Orders = () => {
 
         setOrders(mappedOrders);
         setCurrentPage(result.data.data?.page || page);
-        setTotalPages(Math.ceil((result.data.data?.total || 0) / 20));
+        setTotalPages(Math.ceil((result.data.data?.total || 0) / 10));
         console.log('✅ Orders state updated. Total:', mappedOrders.length);
       } else {
         console.error('❌ Invalid response structure:', result);
@@ -135,7 +135,7 @@ const Orders = () => {
       setLoading(true);
       setSummaryError("");
       console.log('🔄 Fetching order summary...');
-      const result = await apiService.request('/orders/reports/summary', 'GET');
+      const result = await apiService.orders.getSummary({ period: '7d' });
 
       console.log('📦 Summary Response:', result);
 
@@ -228,11 +228,53 @@ const Orders = () => {
     order.status?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      fetchOrders(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      fetchOrders(currentPage + 1);
+    }
+  };
+
+  const handlePageChange = (pageNum) => {
+    if (pageNum >= 1 && pageNum <= totalPages) {
+      fetchOrders(pageNum);
+    }
+  };
+
+  const getPaginationNumbers = () => {
+    const pages = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
+  const formatStatusLabel = (status) => {
+    if (status === 'PENDING' || status === 'PAYMENT_PENDING') return 'Processing';
+    return status;
+  };
+
+  const formatPaymentStatusLabel = (paymentStatus) => {
+    if (paymentStatus === 'PENDING' || paymentStatus === 'PENDING_PAYMENT') return 'Processing';
+    return paymentStatus;
+  };
+
   return (
     <div>
       <div className="flex overflow-x-hidden">
         <Sidebar />
-        <div className="w-full ml-[290px] overflow-hidden">
+        <div className="w-full md:ml-[290px] ml-0 overflow-hidden">
           <Header />
           <div className="p-6 bg-gray-50 min-h-[calc(100vh-80px)] overflow-y-auto overflow-x-hidden">
             <div className="flex flex-col gap-4 mb-6">
@@ -335,14 +377,14 @@ const Orders = () => {
                                     <td className="px-3 md:px-6 py-3 md:py-4">
                                       <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium ${order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                                         order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                          order.status === 'PAYMENT_PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                            order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                          order.status === 'PAYMENT_PENDING' ? 'bg-blue-100 text-blue-800' :
+                                            order.status === 'PENDING' ? 'bg-blue-100 text-blue-800' :
                                               order.status === 'PROCESSING' ? 'bg-blue-100 text-blue-800' :
                                                 order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-800' :
                                                   order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
                                                     'bg-gray-100 text-gray-800'
                                         }`}>
-                                        {order.status}
+                                        {formatStatusLabel(order.status)}
                                       </span>
                                     </td>
                                     <td className="px-3 md:px-6 py-3 md:py-4 font-medium text-amber-600">₹{order.totalAmount?.toLocaleString() || '0'}</td>
@@ -377,14 +419,14 @@ const Orders = () => {
                                   </div>
                                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                                     order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                      order.status === 'PAYMENT_PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                        order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                      order.status === 'PAYMENT_PENDING' ? 'bg-blue-100 text-blue-800' :
+                                        order.status === 'PENDING' ? 'bg-blue-100 text-blue-800' :
                                           order.status === 'PROCESSING' ? 'bg-blue-100 text-blue-800' :
                                             order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-800' :
                                               order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
                                                 'bg-gray-100 text-gray-800'
                                     }`}>
-                                    {order.status}
+                                    {formatStatusLabel(order.status)}
                                   </span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
@@ -427,6 +469,44 @@ const Orders = () => {
                               No results match your search: <span className="font-medium">{searchTerm}</span>
                             </p>
                           )}
+                        </div>
+                      )}
+
+                      {/* Pagination Controls */}
+                      {filteredOrders.length > 0 && totalPages > 1 && (
+                        <div className="flex items-center justify-between px-4 py-4 bg-gray-50 border-t border-gray-200 mt-4 rounded-lg">
+                          <div className="text-xs md:text-sm text-gray-600">
+                            Page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{totalPages}</span> | Showing <span className="font-semibold">{orders.length}</span> orders
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={handlePrevPage}
+                              disabled={currentPage === 1}
+                              className="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                              title="Previous page"
+                            >
+                              <FaChevronLeft size={16} />
+                            </button>
+                            <div className="flex gap-1">
+                              {getPaginationNumbers().map((pageNum) => (
+                                <button
+                                  key={pageNum}
+                                  onClick={() => handlePageChange(pageNum)}
+                                  className={currentPage === pageNum ? 'w-8 h-8 md:w-10 md:h-10 rounded-lg font-medium transition bg-amber-600 text-white text-xs md:text-sm' : 'w-8 h-8 md:w-10 md:h-10 rounded-lg font-medium transition bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs md:text-sm'}
+                                >
+                                  {pageNum}
+                                </button>
+                              ))}
+                            </div>
+                            <button
+                              onClick={handleNextPage}
+                              disabled={currentPage >= totalPages}
+                              className="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                              title="Next page"
+                            >
+                              <FaChevronRight size={16} />
+                            </button>
+                          </div>
                         </div>
                       )}
                     </>
@@ -580,11 +660,11 @@ const Orders = () => {
                                 <td className="px-3 md:px-6 py-3 md:py-4 font-medium text-amber-600">₹{tx.totalAmountINR?.toLocaleString()}</td>
                                 <td className="px-3 md:px-6 py-3 md:py-4 hidden sm:table-cell">
                                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${tx.paymentStatus === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                                    tx.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                    tx.paymentStatus === 'PENDING' || tx.paymentStatus === 'PENDING_PAYMENT' ? 'bg-blue-100 text-blue-800' :
                                       tx.paymentStatus === 'FAILED' ? 'bg-red-100 text-red-800' :
                                         'bg-gray-100 text-gray-800'
                                     }`}>
-                                    {tx.paymentStatus}
+                                    {formatPaymentStatusLabel(tx.paymentStatus)}
                                   </span>
                                 </td>
                                 <td className="px-3 md:px-6 py-3 md:py-4 text-gray-900">
@@ -603,11 +683,11 @@ const Orders = () => {
                             <div className="flex justify-between items-start mb-3">
                               <p className="font-bold text-amber-600 text-sm">#{tx.orderNumber}</p>
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${tx.paymentStatus === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                                tx.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                tx.paymentStatus === 'PENDING' || tx.paymentStatus === 'PENDING_PAYMENT' ? 'bg-blue-100 text-blue-800' :
                                   tx.paymentStatus === 'FAILED' ? 'bg-red-100 text-red-800' :
                                     'bg-gray-100 text-gray-800'
                                 }`}>
-                                {tx.paymentStatus}
+                                {formatPaymentStatusLabel(tx.paymentStatus)}
                               </span>
                             </div>
                             <p className="text-xs text-gray-500 mb-3 truncate">ID: {tx.id}</p>

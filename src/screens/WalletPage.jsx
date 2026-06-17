@@ -15,45 +15,90 @@ const WalletPage = () => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const transactionsPerPage = 10;
 
-    // Fetch wallet data on component mount
+    // Fetch wallet data whenever the authenticated user is available
     useEffect(() => {
         const fetchWalletData = async () => {
             setLoading(true);
             setError("");
+
             try {
-                // Fetch balance
-                const balanceResult = await apiService.wallet.getBalance();
-                console.log("💰 Wallet Balance:", balanceResult);
+                const customerResult = await apiService.vendor.customers.getAll({ limit: 50, offset: 0 });
 
-                // Fetch transactions
-                const txnResult = await apiService.wallet.getTransactions({ limit: 20 });
-                console.log("📋 Wallet Transactions:", txnResult);
-
-                if (balanceResult.success) {
-                    setWalletBalance(balanceResult.data);
+                if (!customerResult.success) {
+                    console.warn("⚠️ Vendor customers fetch failed:", customerResult.error);
+                    throw new Error(customerResult.error || "Failed to load vendor customer data");
                 }
 
-                if (txnResult.success && txnResult.data) {
-                    // Handle nested response structure if needed
-                    const txnData = txnResult.data?.data || txnResult.data;
-                    setTransactions(Array.isArray(txnData) ? txnData : []);
-                }
+                const customers = customerResult.data?.data?.customers || customerResult.data?.customers || [];
+                const allOrders = customers.flatMap((customer) => customer.orders || []);
+
+                const normalizePaymentStatus = (status) => {
+                    const normalized = status?.toString().toLowerCase() || '';
+                    if (normalized === 'pending' || normalized === 'pending_payment') return 'pending_payment';
+                    return normalized;
+                };
+
+                const completedOrders = allOrders.filter((order) => normalizePaymentStatus(order.paymentStatus || order.payment?.status || order.status) === 'completed');
+                const pendingOrders = allOrders.filter((order) => normalizePaymentStatus(order.paymentStatus || order.payment?.status || order.status) === 'pending_payment');
+                const failedOrders = allOrders.filter((order) => {
+                    const status = normalizePaymentStatus(order.paymentStatus || order.payment?.status || order.status);
+                    return status === 'failed' || status === 'cancelled';
+                });
+
+                const totalCompleted = completedOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+                const totalPending = pendingOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+                const totalFailed = failedOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+                const totalBalance = totalCompleted + totalPending + totalFailed;
+
+                setWalletBalance({
+                    totalBalance,
+                    availableBalance: totalCompleted,
+                    pendingBalance: totalPending,
+                    lockedBalance: totalFailed,
+                    currency: "₹",
+                    monthlyEarnings: totalCompleted,
+                    status: "Active",
+                    updatedAt: new Date().toISOString(),
+                });
+
+                const formattedTransactions = allOrders.map((order) => {
+                    const orderPaymentStatus = normalizePaymentStatus(order.paymentStatus || order.payment?.status || order.status);
+                    return {
+                        id: order.orderId || order.orderNumber || `${order.type}-${order.totalAmount}-${order.createdAt}`,
+                        date: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+                        type: orderPaymentStatus === "completed" ? "credit" : "debit",
+                        amount: Number(order.totalAmount || 0),
+                        description: `${order.type || "Order"} ${order.orderNumber || ""}`.trim(),
+                        status: orderPaymentStatus || "pending",
+                        reference: order.orderNumber || order.orderId,
+                    };
+                });
+
+                setTransactions(formattedTransactions);
             } catch (err) {
                 console.error("❌ Error fetching wallet data:", err);
                 setError("Failed to load wallet data");
+                setTransactions([]);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchWalletData();
-    }, []);
+        if (user) {
+            fetchWalletData();
+        }
+    }, [user]);
 
     // Wallet data - merge API data with user info
     const walletData = {
-        totalBalance: walletBalance?.balance || walletBalance?.availableBalance || 0,
-        currency: "₹",
+        totalBalance: walletBalance?.totalBalance ?? walletBalance?.balance ?? walletBalance?.availableBalance ?? 0,
+        availableBalance: walletBalance?.availableBalance ?? 0,
+        lockedBalance: walletBalance?.lockedBalance ?? 0,
+        pendingBalance: walletBalance?.pendingBalance ?? 0,
+        currency: walletBalance?.currency || "₹",
         vendorName: user?.businessName || "Vendor Account",
         accountHolder: user?.name || "Account Holder",
         email: user?.email || "vendor@dgi.com",
@@ -64,13 +109,15 @@ const WalletPage = () => {
         gstin: user?.gstin || "N/A",
         kycStatus: user?.kycStatus || "Verified",
         totalTransactions: transactions?.length || 0,
-        monthlyEarnings: walletBalance?.monthlyEarnings || 0,
-        lastUpdated: new Date().toLocaleDateString(),
+        monthlyEarnings: walletBalance?.monthlyEarnings ?? 0,
+        lastUpdated: walletBalance?.updatedAt
+            ? new Date(walletBalance.updatedAt).toLocaleDateString()
+            : new Date().toLocaleDateString(),
         allTransactions: transactions || [],
     };
 
-    const formatCurrency = (amount) => {
-        return `${walletData.currency}${amount.toLocaleString("en-IN")}`;
+    const formatCurrency = (amount = 0) => {
+        return `${walletData.currency}${Number(amount).toLocaleString("en-IN")}`;
     };
 
     // Filter transactions
@@ -108,11 +155,26 @@ const WalletPage = () => {
     };
 
     const filteredTransactions = getFilteredTransactions();
+    const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / transactionsPerPage));
+    const paginatedTransactions = filteredTransactions.slice(
+        (currentPage - 1) * transactionsPerPage,
+        currentPage * transactionsPerPage
+    );
+
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [filterType, filterDate, transactions.length]);
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+        }
+    };
 
     return (
         <div className="flex min-h-screen bg-gray-50">
             <Sidebar />
-            <div className="flex-1 ml-[290px]">
+            <div className="flex-1 md:ml-[290px] ml-0">
                 <Header />
                 <div className="p-8 overflow-y-auto">
                     <div className="max-w-7xl mx-auto space-y-8">
@@ -173,6 +235,22 @@ const WalletPage = () => {
                                         <p className="text-2xl font-bold">{walletData.totalTransactions}</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Balance Breakdown */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                                <p className="text-gray-600 text-sm mb-2">Available Balance</p>
+                                <p className="text-3xl font-bold text-gray-900">{formatCurrency(walletData.availableBalance)}</p>
+                            </div>
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                                <p className="text-gray-600 text-sm mb-2">Pending Balance</p>
+                                <p className="text-3xl font-bold text-yellow-600">{formatCurrency(walletData.pendingBalance)}</p>
+                            </div>
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                                <p className="text-gray-600 text-sm mb-2">Locked Balance</p>
+                                <p className="text-3xl font-bold text-red-600">{formatCurrency(walletData.lockedBalance)}</p>
                             </div>
                         </div>
 
@@ -273,7 +351,7 @@ const WalletPage = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y">
-                                        {filteredTransactions.map((transaction) => (
+                                        {paginatedTransactions.map((transaction) => (
                                             <tr key={transaction.id} className="hover:bg-gray-50 transition">
                                                 <td className="px-6 py-4 text-gray-600">{new Date(transaction.date).toLocaleDateString()}</td>
                                                 <td className="px-6 py-4 font-medium text-gray-800">{transaction.description}</td>
@@ -302,6 +380,31 @@ const WalletPage = () => {
                             </div>
                             {filteredTransactions.length === 0 && (
                                 <div className="text-center py-8 text-gray-500">No transactions found</div>
+                            )}
+
+                            {filteredTransactions.length > transactionsPerPage && (
+                                <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                    >
+                                        Previous
+                                    </button>
+                                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                                        <span>Page</span>
+                                        <span className="font-semibold">{currentPage}</span>
+                                        <span>of</span>
+                                        <span className="font-semibold">{totalPages}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </div>

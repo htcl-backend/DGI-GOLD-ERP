@@ -42,6 +42,17 @@ const dummyProfiles = {
     }
 };
 
+const normalizeUserProfile = (userData) => {
+    if (!userData || typeof userData !== 'object') return userData;
+
+    const profileImage = userData.profileImage || userData.profilePhotoUrl || userData.avatar || userData.photoURL || userData.profile_image || userData.image || null;
+
+    return {
+        ...userData,
+        profileImage,
+    };
+};
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -106,7 +117,8 @@ export const AuthProvider = ({ children }) => {
                     const apiData = result.data.data || result.data;  // Get inner data layer
                     const token = apiData.accessToken || apiData.token;
                     const refreshToken = apiData.refreshToken || null;
-                    const userData = apiData.user || apiData;
+                    const rawUserData = apiData.user || apiData;
+                    const userData = normalizeUserProfile(rawUserData);
 
                     if (!token || !userData) {
                         console.error('❌ Invalid API response structure:', result);

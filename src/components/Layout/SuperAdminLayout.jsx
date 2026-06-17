@@ -5,6 +5,7 @@ export const superAdminNavItems = [
     { key: "kyc", label: "KYC Approvals", path: "/superadmin/kyc-approvals" },
     { key: "orders", label: "All Orders", path: "/superadmin/all-orders" },
     { key: "customers", label: "All Customers", path: "/superadmin/all-customers" },
+    { key: "master-data", label: "Master Data", path: "/superadmin/master-data" },
     { key: "reports", label: "Reports", path: "/superadmin/reports" },
     { key: "profile", label: "Profile", path: "/superadmin/profile" },
     { key: "settings", label: "Settings", path: "/superadmin/settings" },

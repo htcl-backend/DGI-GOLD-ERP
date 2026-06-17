@@ -2,7 +2,7 @@ import React from "react";
 import logo from "../assets/img/logo 2.svg";
 import { RxDashboard } from "react-icons/rx";
 import { HiNumberedList } from "react-icons/hi2";
-import { FaFileAlt, FaWallet, FaUser } from "react-icons/fa";
+import { FaFileAlt, FaWallet, FaUser, FaExchangeAlt } from "react-icons/fa";
 import { AiFillProduct } from "react-icons/ai";
 import { PiUsersDuotone } from "react-icons/pi";
 import { MdOutlineCalendarViewWeek, MdOutlineDeliveryDining } from "react-icons/md";
@@ -20,6 +20,7 @@ const Sidebar = () => {
     dashboard: <RxDashboard />,
     wallet: <FaWallet />,
     orders: <HiNumberedList />,
+    transactions: <FaExchangeAlt />,
     customers: <PiUsersDuotone />,
     products: <AiFillProduct />,
     Reports: <FaFileAlt />,
@@ -36,7 +37,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="fixed left-0 top-0 w-[290px] sidebar-shadow h-screen overflow-y-auto z-50 bg-white text-black">
+    <div className="hidden md:block fixed left-0 top-0 w-full md:w-[290px] sidebar-shadow h-screen overflow-y-auto z-50 bg-white text-black">
       <div className="flex items-center gap-[12px] relative pl-[15px] pt-[12px]">
         <img src={logo} alt="" className="w-[43px] h-[48px] rounded-[6px]" />
         <span className="text-[#a66002] text-[24px] font-[700]">DGI GOLD</span>

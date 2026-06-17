@@ -21,7 +21,7 @@ const BuyGold = () => {
 
         <div className="flex ">
             <Sidebar />
-            <div className="w-full ml-[290px]">
+            <div className="w-full md:ml-[290px] ml-0">
                 <Header />
                 <div className="p-6 bg-gray-50 min-h-screen">
 

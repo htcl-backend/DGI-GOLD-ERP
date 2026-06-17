@@ -85,7 +85,7 @@ const DeliveryManagement = () => {
         return (
             <div>
                 <Sidebar />
-                <div className="w-full ml-[290px]">
+                <div className="w-full md:ml-[290px] ml-0">
                     <Header />
                     <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
                         <div className="text-xl">Loading deliveries...</div>
@@ -98,7 +98,7 @@ const DeliveryManagement = () => {
     return (
         <div>
             <Sidebar />
-            <div className="w-full ml-[290px]">
+            <div className="w-full md:ml-[290px] ml-0">
                 <Header />
                 <div className="p-6 bg-gray-50 min-h-screen">
                     <h2 className="text-3xl font-bold text-gray-800 mb-6">Delivery Management</h2>
