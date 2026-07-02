@@ -4,7 +4,19 @@ import Header from "../../components/Header";
 
 const ProductDetails = ({ product, onBack }) => {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-    const productImages = product?.imageUrls?.length ? product.imageUrls : [product?.imageUrl || product?.image || "https://via.placeholder.com/640x360?text=No+Image"];
+    const extractImageUrl = (image) => {
+        if (!image) return null;
+        if (typeof image === 'string') return image;
+        return image?.url || image?.src || image?.fileUrl || image?.thumbnail || image?.path || image?.image || image?.file?.url || image?.data?.url || image?.attributes?.url || null;
+    };
+
+    const productImages = product?.imageUrls?.length
+        ? product.imageUrls.map(extractImageUrl)
+        : Array.isArray(product?.images) && product.images.length
+            ? product.images.map(extractImageUrl)
+            : Array.isArray(product?.media) && product.media.length
+                ? product.media.map(extractImageUrl)
+                : [extractImageUrl(product?.imageUrl || product?.image || product?.thumbnailUrl || product?.coverImage || product?.picture || product?.productImage) || "https://via.placeholder.com/640x360?text=No+Image"];
     const [showAddForm, setShowAddForm] = useState(false);
     const [formData, setFormData] = useState({
         code: "",

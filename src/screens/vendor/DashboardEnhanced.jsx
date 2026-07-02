@@ -154,8 +154,8 @@ const VendorDashboardEnhanced = () => {
                                                 <td className="px-4 py-2 text-sm font-medium text-gray-900">{order.amount}</td>
                                                 <td className="px-4 py-2 text-sm">
                                                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${order.status === 'Delivered' ? 'text-green-700 bg-green-100' :
-                                                            order.status === 'Processing' ? 'text-blue-700 bg-blue-100' :
-                                                                'text-yellow-700 bg-yellow-100'
+                                                        order.status === 'Processing' ? 'text-blue-700 bg-blue-100' :
+                                                            'text-yellow-700 bg-yellow-100'
                                                         }`}>
                                                         {order.status}
                                                     </span>

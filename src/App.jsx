@@ -31,16 +31,16 @@ import DeliveryManagement from './screens/DeliveryManagement';
 import PurchaseManagement from './screens/PurchaseManagement';
 import GoldPriceDashboard from './screens/GoldPriceDashboard';
 
-// SuperAdmin Components
-import SuperAdminDashboard from './screens/superadmin/Dashboard';
-import AllOrders from './screens/superadmin/AllOrders';
-import AllCustomers from './screens/superadmin/AllCustomers';
-import KycApprovals from './screens/superadmin/KycApprovals';
-import SuperAdminReports from './screens/superadmin/Reports';
-import SuperAdminVendors from './screens/superadmin/Vendors';
-import MasterData from './screens/superadmin/MasterData';
-import SuperAdminProfile from './screens/superadmin/Profile';
-import SuperAdminSettings from './screens/superadmin/Settings';
+// SuperAdmin Components - DISABLED
+// import SuperAdminDashboard from './screens/superadmin/Dashboard';
+// import AllOrders from './screens/superadmin/AllOrders';
+// import AllCustomers from './screens/superadmin/AllCustomers';
+// import KycApprovals from './screens/superadmin/KycApprovals';
+// import SuperAdminReports from './screens/superadmin/Reports';
+// import SuperAdminVendors from './screens/superadmin/Vendors';
+// import MasterData from './screens/superadmin/MasterData';
+// import SuperAdminProfile from './screens/superadmin/Profile';
+// import SuperAdminSettings from './screens/superadmin/Settings';
 
 // Profile Components
 import VendorProfile from './screens/vendor/Profile';
@@ -59,103 +59,22 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             {/* <Route path="/register" element={<Register />} /> */}
 
-            {/* SuperAdmin Routes */}
-            <Route
-              path="/superadmin/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <SuperAdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/orders"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <AllOrders />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/all-orders"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <AllOrders />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/customers"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <AllCustomers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/all-customers"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <AllCustomers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/kyc"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <KycApprovals />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/kyc-approvals"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <KycApprovals />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/reports"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <SuperAdminReports />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/vendors"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <SuperAdminVendors />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/master-data"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <MasterData />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/profile"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <SuperAdminProfile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/superadmin/settings"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}>
-                  <SuperAdminSettings />
-                </ProtectedRoute>
-              }
-            />
+            {/* SuperAdmin Routes - DISABLED */}
+            {/* Uncomment below to enable superadmin routes */}
+            {/* 
+            <Route path="/superadmin/dashboard" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><SuperAdminDashboard /></ProtectedRoute>} />
+            <Route path="/superadmin/orders" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><AllOrders /></ProtectedRoute>} />
+            <Route path="/superadmin/all-orders" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><AllOrders /></ProtectedRoute>} />
+            <Route path="/superadmin/customers" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><AllCustomers /></ProtectedRoute>} />
+            <Route path="/superadmin/all-customers" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><AllCustomers /></ProtectedRoute>} />
+            <Route path="/superadmin/kyc" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><KycApprovals /></ProtectedRoute>} />
+            <Route path="/superadmin/kyc-approvals" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><KycApprovals /></ProtectedRoute>} />
+            <Route path="/superadmin/reports" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><SuperAdminReports /></ProtectedRoute>} />
+            <Route path="/superadmin/vendors" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><SuperAdminVendors /></ProtectedRoute>} />
+            <Route path="/superadmin/master-data" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><MasterData /></ProtectedRoute>} />
+            <Route path="/superadmin/profile" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><SuperAdminProfile /></ProtectedRoute>} />
+            <Route path="/superadmin/settings" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><SuperAdminSettings /></ProtectedRoute>} />
+            */}
 
             {/* Vendor Routes */}
             <Route

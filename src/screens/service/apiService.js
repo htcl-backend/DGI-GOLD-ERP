@@ -261,7 +261,15 @@ class APIService {
     kyc = {
         getPending: (params = {}) => this.request(`/kyc/pending?${new URLSearchParams({ page: 1, limit: 20, sortBy: 'submittedAt', sortOrder: 'asc', ...params })}`, 'GET'),
         getApproved: (params = {}) => this.request(`/kyc/approved?${new URLSearchParams({ page: 1, limit: 20, sortBy: 'reviewedAt', sortOrder: 'desc', ...params })}`, 'GET'),
-        reviewKYC: (kycId, payload) => this.request(`/kyc/${kycId}/review`, 'POST', payload),
+        getRejected: (params = {}) => this.request(`/kyc/rejected?${new URLSearchParams({ page: 1, limit: 20, sortBy: 'reviewedAt', sortOrder: 'desc', ...params })}`, 'GET'),
+        reviewKYC: (kycId, payload) => {
+            console.log(`🔍 KYC Review Request:`, {
+                endpoint: `/kyc/${kycId}/review`,
+                method: 'POST',
+                payload: payload
+            });
+            return this.request(`/kyc/${kycId}/review`, 'POST', payload);
+        },
     };
 
     // ============== ANALYTICS APIs ==============
@@ -297,6 +305,17 @@ class APIService {
     admin = {
         analytics: {
             getOverview: (params = {}) => this.requestW1(`/admin/analytics?${new URLSearchParams(params)}`, 'GET'),
+        }
+    };
+
+    // ============== LEDGER APIs ==============
+    ledger = {
+        admin: {
+            // GET /api/v1/ledger/admin/transaction - Fetch admin transaction ledger
+            getTransactions: (params = {}) => this.request(`/ledger/admin/transaction?${new URLSearchParams(params)}`, 'GET'),
+
+            // GET /api/v1/ledger/admin/wallet - Fetch admin wallet ledger
+            getWalletLedger: (params = {}) => this.request(`/ledger/admin/wallet?${new URLSearchParams(params)}`, 'GET'),
         }
     };
 

@@ -29,19 +29,53 @@ const ProductList = () => {
 
     const placeholderImage = "https://via.placeholder.com/80?text=No+Image";
 
-    const getProductImageUrls = (product) => {
-        if (!product) return [];
-        if (Array.isArray(product.images) && product.images.length) {
-            return product.images.map((image) => image?.url || image?.src || image);
-        }
-        if (Array.isArray(product.media) && product.media.length) {
-            return product.media.map((media) => media?.url || media?.fileUrl || media);
-        }
-        const primaryImage = product.imageUrl || product.image || product.thumbnailUrl || product.coverImage || product.picture || product.productImage;
-        return primaryImage ? [primaryImage] : [];
+    const extractImageUrl = (image) => {
+        if (!image) return null;
+        if (typeof image === 'string') return image;
+        return (
+            image?.url ||
+            image?.src ||
+            image?.fileUrl ||
+            image?.thumbnail ||
+            image?.thumbnailUrl ||
+            image?.path ||
+            image?.image ||
+            image?.secure_url ||
+            image?.location ||
+            image?.Location ||
+            image?.key ||
+            image?.file?.url ||
+            image?.data?.url ||
+            image?.attributes?.url ||
+            null
+        );
     };
 
-    const getProductImageUrl = (product) => getProductImageUrls(product)[0] || "";
+    const getProductImageUrls = (product) => {
+        if (!product) return [];
+
+        const candidates = [];
+
+        if (Array.isArray(product.imageUrls) && product.imageUrls.length) {
+            candidates.push(...product.imageUrls.map(extractImageUrl));
+        }
+
+        if (Array.isArray(product.images) && product.images.length) {
+            candidates.push(...product.images.map(extractImageUrl));
+        }
+
+        if (Array.isArray(product.media) && product.media.length) {
+            candidates.push(...product.media.map(extractImageUrl));
+        }
+
+        if (product.imageUrl || product.image || product.thumbnailUrl || product.coverImage || product.picture || product.productImage) {
+            candidates.push(extractImageUrl(product.imageUrl || product.image || product.thumbnailUrl || product.coverImage || product.picture || product.productImage));
+        }
+
+        return candidates.filter((url) => typeof url === 'string' && url.trim().length > 0);
+    };
+
+    const getProductImageUrl = (product) => getProductImageUrls(product)[0] || placeholderImage;
 
     const [selectedFiles, setSelectedFiles] = useState([]);
 
@@ -156,8 +190,93 @@ const ProductList = () => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    // ============================================
+    // IMPROVED MEDIA UPLOAD FUNCTION WITH FIXES
+    // ============================================
+    const uploadProductMedia = async (productId, selectedFiles) => {
+        if (!selectedFiles || selectedFiles.length === 0) {
+            console.log('ℹ️ No files to upload');
+            return { success: true, message: 'No files selected' };
+        }
+
+        console.log(`📸 Uploading ${selectedFiles.length} image file(s)...`);
+
+        try {
+            // Create FormData with multiple field name attempts
+            const mediaForm = new FormData();
+
+            selectedFiles.forEach((item, index) => {
+                if (item?.file) {
+                    // Append with different field names for backend compatibility
+                    mediaForm.append('media', item.file);
+
+                    console.log(`📎 Added image ${index + 1}:`, {
+                        name: item.file.name,
+                        size: `${(item.file.size / 1024).toFixed(2)} KB`,
+                        type: item.file.type
+                    });
+                }
+            });
+
+            console.log('🚀 Sending to endpoint: POST /products/' + productId + '/media');
+
+            // OPTION 1: Try with apiService.products.uploadMedia
+            try {
+                const uploadResponse = await apiService.products.uploadMedia(productId, mediaForm);
+
+                console.log('✅ Media upload response:', uploadResponse);
+
+                if (uploadResponse?.success || uploadResponse?.status === 200) {
+                    console.log('✅ Media uploaded successfully');
+                    return { success: true, data: uploadResponse };
+                } else {
+                    const errorMsg = uploadResponse?.error || uploadResponse?.message || 'Unknown error';
+                    console.warn('⚠️ Media upload failed:', errorMsg);
+                    return { success: false, error: errorMsg };
+                }
+            } catch (apiError) {
+                console.warn('⚠️ apiService.uploadMedia failed, trying direct fetch...');
+
+                // OPTION 2: Try direct fetch as fallback
+                const token = localStorage.getItem('authToken');
+                const response = await fetch(
+                    `${process.env.REACT_APP_API_BASE_URL || 'https://api.dgi.gold/api/v1'}/products/${productId}/media`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            // DO NOT set Content-Type - browser will set it with boundary
+                        },
+                        body: mediaForm
+                    }
+                );
+
+                console.log('📡 Direct fetch status:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Direct fetch error:', response.status, errorText);
+                    return { success: false, error: `HTTP ${response.status}: ${errorText}` };
+                }
+
+                const result = await response.json();
+                console.log('✅ Direct fetch success:', result);
+                return { success: true, data: result };
+            }
+
+        } catch (error) {
+            console.error('❌ Media upload error:', error.message);
+            return { success: false, error: error.message };
+        }
+    };
+
     const handleAddProduct = async (e) => {
         e.preventDefault();
+
+        // FIX #1: Generate unique SKU if code is empty or auto-generate to avoid duplicates
+        const skuCode = formData.code?.trim()
+            ? formData.code.trim()
+            : `${formData.material.toUpperCase()}-${formData.purity}-${Date.now()}`;
 
         const newProductPayload = {
             name: formData.name?.trim() || "Unnamed Product",
@@ -175,7 +294,7 @@ const ProductList = () => {
             markup: parseFloat(formData.markup) || 0,
             makingCharges: parseFloat(formData.makingCharges) || 0,
             gstPercent: parseFloat(formData.gst) || 5,
-            sku: formData.code?.trim() || `SKU-${Date.now()}`,
+            sku: skuCode,
             status: formData.status || "DRAFT",
             category: "BAR",
             shippable: true,
@@ -183,57 +302,81 @@ const ProductList = () => {
         };
 
         try {
-            let response;
+            console.log('📝 Creating product with SKU:', skuCode);
 
-            if (selectedFiles.length > 0) {
-                const formDataPayload = new FormData();
-                Object.entries(newProductPayload).forEach(([key, value]) => {
-                    if (value !== undefined && value !== null) {
-                        formDataPayload.append(key, value);
+            // Step 1: Create product
+            const createResponse = await apiService.products.create(newProductPayload);
+            if (!createResponse.success) {
+                throw new Error(createResponse.error || 'Failed to add product');
+            }
+
+            const createdProduct = createResponse.data?.data || createResponse.data;
+            const productId = createdProduct?.id || createdProduct?._id || createdProduct?.productId;
+
+            if (!productId) {
+                throw new Error('Product created but response did not return an ID');
+            }
+
+            console.log('✅ Product created with ID:', productId);
+
+            // Step 2: Upload media if files selected (using improved function)
+            if (selectedFiles && selectedFiles.length > 0) {
+                const uploadResult = await uploadProductMedia(productId, selectedFiles);
+
+                if (!uploadResult.success) {
+                    console.warn('⚠️ Media upload warning:', uploadResult.error);
+                    // Check if it's a 500 error - likely backend issue
+                    if (uploadResult.error.includes('500') || uploadResult.error.includes('Internal Server Error')) {
+                        alert('✅ Product added! ⚠️ Note: Image upload failed with server error (500).\n\nPlease contact your backend team to check the media endpoint at POST /products/{id}/media');
+                    } else {
+                        alert('✅ Product created! ⚠️ Note: Image upload failed.\n\nYou can add images later from product details.');
                     }
-                });
-
-                selectedFiles.forEach((item, index) => {
-                    formDataPayload.append("images", item.file);
-                });
-
-                response = await apiService.request("/products", "POST", formDataPayload, true);
+                } else {
+                    console.log('✅ Media uploaded successfully');
+                    alert('✅ Product and images added successfully!');
+                }
             } else {
-                response = await apiService.request("/products", "POST", newProductPayload);
+                alert('✅ Product added successfully!');
             }
 
-            if (response.success) {
-                alert("✅ Product added successfully!");
-                fetchProducts();
-                setFormData({
-                    code: "",
-                    material: "gold",
-                    name: "",
-                    purity: "999",
-                    stock: "",
-                    weight: "",
-                    price: "",
-                    description: "",
-                    markup: "",
-                    makingCharges: "",
-                    gst: "5",
-                    status: "DRAFT",
-                });
-                setSelectedFiles([]);
-                setShowAddForm(false);
-            } else {
-                const errorMsg = response.error || response.message || "Failed to add product";
-                alert("❌ Error: " + errorMsg);
-            }
+            // Refresh product list
+            await fetchProducts();
+
+            // Reset form
+            setFormData({
+                code: '',
+                material: 'gold',
+                name: '',
+                purity: '999',
+                stock: '',
+                weight: '',
+                price: '',
+                description: '',
+                markup: '',
+                makingCharges: '',
+                gst: '5',
+                status: 'DRAFT',
+            });
+            setSelectedFiles([]);
+            setShowAddForm(false);
+
         } catch (error) {
-            alert("❌ Error adding product: " + (error.message || error));
+            console.error('❌ Product creation error:', error);
+            const errorMsg = error.message || error.toString();
+
+            if (errorMsg.includes('SKU must be unique')) {
+                alert('❌ Error: This SKU already exists!\n\nSolution: Leave the Product Code field empty to auto-generate a unique SKU, or use a different code.');
+            } else if (errorMsg.includes('image') || errorMsg.includes('media')) {
+                alert('❌ Error: ' + errorMsg + '\n\nTry uploading images separately from product details.');
+            } else {
+                alert('❌ Error: ' + errorMsg);
+            }
         }
     };
 
     const handleUpdateProductStatus = async (productId, newStatus) => {
         if (updatingIds.includes(productId)) return;
 
-        // Optimistic update: update local arrays first and rollback if request fails
         const prevGold = goldProducts;
         const prevSilver = silverProducts;
         const applyLocalStatus = (arr) => arr.map((p) => {
@@ -351,7 +494,7 @@ const ProductList = () => {
                                                     <td className="px-3 sm:px-6 py-2 sm:py-4 max-w-28 text-xs sm:text-sm">
                                                         <div className="h-12 w-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200">
                                                             <img
-                                                                src={product.imageUrl || placeholderImage}
+                                                                src={getProductImageUrl(product)}
                                                                 alt={product.name || product.code}
                                                                 className="h-full w-full object-cover"
                                                             />
@@ -402,8 +545,8 @@ const ProductList = () => {
                                 <form onSubmit={handleAddProduct} className="p-6 max-h-[70vh] overflow-y-auto">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Code (SKU)</label>
-                                            <input type="text" name="code" value={formData.code} onChange={handleInputChange} placeholder="e.g., GOLD-24K-10G-001" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" required />
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Code (SKU) <span className="text-gray-400 text-xs">(optional - auto-generate if empty)</span></label>
+                                            <input type="text" name="code" value={formData.code} onChange={handleInputChange} placeholder="Leave empty to auto-generate unique SKU" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
                                         </div>
 
                                         <div>
@@ -427,11 +570,13 @@ const ProductList = () => {
                                         <div className="col-span-2">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
                                             <input type="file" accept="image/*" multiple onChange={handleImageSelection} className="w-full text-sm text-gray-700" />
+                                            <p className="text-xs text-gray-500 mt-1">💡 Supported formats: JPG, PNG, GIF. Max file size: check your server limits.</p>
                                             {selectedFiles.length > 0 && (
                                                 <div className="mt-3 grid grid-cols-3 gap-3">
                                                     {selectedFiles.map((fileWrapper, index) => (
                                                         <div key={fileWrapper.preview} className="h-24 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
                                                             <img src={fileWrapper.preview} alt={`Selected ${index + 1}`} className="h-full w-full object-cover" />
+                                                            <p className="text-xs text-gray-600 truncate">{fileWrapper.file.name}</p>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -488,7 +633,7 @@ const ProductList = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Production Status</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Publication Status</label>
                                             <select name="status" value={formData.status} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
                                                 <option value="DRAFT">Draft (Not Visible)</option>
                                                 <option value="ACTIVE">Publish (Visible)</option>

@@ -30,8 +30,9 @@ const Transactions = () => {
             setLoading(true);
             setError(null);
 
-            // GET /api/v1/orders/admin/pending
-            const params = filter === 'pending' || filter === 'all' ? {} : { status: filter };
+            // GET /api/v1/orders/admin/pending - fetches all pending/approval orders
+            // Note: This endpoint returns orders that need approval (pending and recently rejected)
+            const params = {};
             const response = await apiService.orders.getAdminPending(params);
             console.log('🔎 Admin pending orders response:', response);
 
@@ -62,7 +63,8 @@ const Transactions = () => {
                 console.log('✅ Extracted using fallback:', ordersList.length, 'orders');
             }
 
-            console.log('📊 Final orders list:', ordersList);
+            console.log('📊 Final orders list with all statuses:', ordersList);
+            console.log('📊 Order statuses:', ordersList.map(o => ({ id: o._id || o.orderId, status: o.status || o.paymentStatus })));
             setError(null);
             setOrders(ordersList);
         } catch (err) {
@@ -75,22 +77,28 @@ const Transactions = () => {
     };
 
     useEffect(() => {
-        fetchOrders(activeFilter);
-    }, [activeFilter]);
+        fetchOrders();
+    }, []);
 
     const handleApprove = async (orderId) => {
         if (!orderId) return;
         try {
             setActionLoading(true);
+            console.log('Approving order:', orderId);
             // Send approval with a note
             const response = await apiService.orders.approveOrder(orderId, {
                 note: 'Order approved by admin'
             });
 
+            console.log('Approve response:', response);
             if (response?.success || response?.status === 200) {
+                console.log('Order approved successfully, refetching orders...');
+                setError(null);
                 fetchOrders(activeFilter);
             } else {
-                setError(response?.error || 'Unable to approve order');
+                const errorMsg = response?.error || 'Unable to approve order';
+                console.error('Approval failed:', errorMsg);
+                setError(errorMsg);
             }
         } catch (err) {
             console.error('Error approving order:', err);
@@ -103,18 +111,27 @@ const Transactions = () => {
     const handleReject = async (orderId) => {
         if (!orderId) return;
         const rejectionReason = window.prompt('Enter rejection reason for this order:');
-        if (!rejectionReason?.trim()) return;
+        if (!rejectionReason?.trim()) {
+            console.log('Rejection cancelled - no reason provided');
+            return;
+        }
 
         try {
             setActionLoading(true);
+            console.log('Rejecting order:', orderId, 'with reason:', rejectionReason);
             const response = await apiService.orders.rejectOrder(orderId, {
-                reason: rejectionReason,
+                reason: rejectionReason.trim(),
             });
 
+            console.log('Reject response:', response);
             if (response?.success || response?.status === 200) {
+                console.log('Order rejected successfully, refetching orders...');
+                setError(null);
                 fetchOrders(activeFilter);
             } else {
-                setError(response?.error || 'Unable to reject order');
+                const errorMsg = response?.error || 'Unable to reject order';
+                console.error('Rejection failed:', errorMsg);
+                setError(errorMsg);
             }
         } catch (err) {
             console.error('Error rejecting order:', err);
@@ -134,7 +151,10 @@ const Transactions = () => {
                     // Consider PAYMENT_SUCCESS, PENDING, PENDING_PAYMENT as pending approval
                     return orderStatus === 'pending' || orderStatus === 'pending_payment' || orderStatus === 'payment_success' || orderStatus === 'paid';
                 }
-                if (activeFilter === 'rejected') return orderStatus === 'rejected' || orderStatus === 'failed';
+                if (activeFilter === 'rejected') {
+                    // Include all rejection variations
+                    return orderStatus === 'rejected' || orderStatus === 'reject' || orderStatus === 'failed' || orderStatus === 'rejection' || orderStatus === 'declined';
+                }
                 return true;
             })
             .filter((order) => {
@@ -201,7 +221,7 @@ const Transactions = () => {
     }).length;
     const rejectedCount = orders.filter((order) => {
         const orderStatus = (order.paymentStatus || order.status || order.payment?.status || '').toString().toLowerCase();
-        return orderStatus === 'rejected' || orderStatus === 'failed';
+        return orderStatus === 'rejected' || orderStatus === 'reject' || orderStatus === 'failed' || orderStatus === 'rejection' || orderStatus === 'declined';
     }).length;
 
     if (loading) return <div className="p-4">Loading...</div>;

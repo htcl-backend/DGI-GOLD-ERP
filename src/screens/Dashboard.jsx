@@ -53,33 +53,38 @@ const Dashboard = () => {
         apiService.request('/products/inventory/report', 'GET'),
       ]);
 
-      if (summaryResult.success && summaryResult.data) {
-        const recentOrders =
-          ordersResult.success && ordersResult.data?.data?.orders
-            ? ordersResult.data.data.orders
-            : [];
+      console.log("📊 Summary Response:", summaryResult);
+      console.log("📋 Orders Response:", ordersResult);
+      console.log("📦 Inventory Response:", inventoryResult);
 
-        const inventoryReport =
-          inventoryResult.success && inventoryResult.data
-            ? inventoryResult.data
-            : {};
+      // Extract real data with proper fallbacks
+      const summaryData = summaryResult.success ? summaryResult.data : {};
+      const ordersData = ordersResult.success ? ordersResult.data : {};
+      const inventoryData = inventoryResult.success ? inventoryResult.data : {};
 
-        setStats({
-          ...summaryResult.data,
-          recentOrders,
-          inventoryReport, // ✅ now fully API-driven
-        });
-      } else {
-        throw new Error(summaryResult.error || "Failed to fetch dashboard summary");
-      }
+      // Handle nested data structures from API
+      const recentOrders = ordersData?.data?.orders || ordersData?.orders || ordersData?.items || [];
+      const totalOrdersCount = ordersData?.data?.total || ordersData?.total || ordersData?.meta?.total || ordersData?.count || ordersData?.totalCount || recentOrders.length;
+      const inventoryReport = inventoryData?.data || inventoryData;
+
+      setStats({
+        ...summaryData,
+        recentOrders,
+        totalOrdersCount,
+        inventoryReport,
+      });
+      console.log("✅ Dashboard data loaded successfully");
     } catch (err) {
       console.error("🔴 Error fetching dashboard data:", err);
       setError("Unable to connect to API");
-      // On error, stats remains null, and the error UI is shown.
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   // Overview metrics
   const metrics = [
@@ -100,6 +105,12 @@ const Dashboard = () => {
       value: stats?.overview?.activeOrders != null ? stats.overview.activeOrders.toString() : "-",
       bgColor: "bg-gradient-to-br from-pink-400 to-pink-600",
       change: "+12%",
+    },
+    {
+      title: "Total Orders",
+      value: stats?.overview?.totalOrders != null ? stats.overview.totalOrders.toString() : stats?.totalOrdersCount != null ? stats.totalOrdersCount.toString() : "-",
+      bgColor: "bg-gradient-to-br from-violet-400 to-violet-600",
+      change: stats?.overview?.totalOrdersChange ? `${stats.overview.totalOrdersChange}` : "",
     },
     {
       title: "Total Stock",
@@ -139,13 +150,15 @@ const Dashboard = () => {
   const monthlySalesData = {
     labels:
       stats?.monthlySales?.map((item) => monthLabels[(item.month || 1) - 1] || item.month) ||
-      ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+      stats?.monthlySalesData?.map((item) => item.label) ||
+      [],
     datasets: [
       {
         label: 'Monthly Sales',
         data:
-          stats?.monthlySales?.map((item) => item.sales ?? item.revenue) ||
-          [13000, 19500, 15000, 22000, 26000],
+          stats?.monthlySales?.map((item) => item.sales ?? item.revenue ?? item.amount) ||
+          stats?.monthlySalesData?.map((item) => item.value) ||
+          [],
         borderColor: '#FF6B6B',
         backgroundColor: 'rgba(255, 107, 107, 0.1)',
         borderWidth: 3,
@@ -195,11 +208,21 @@ const Dashboard = () => {
   };
 
   // Sales Orders by Status (Circular Graph)
+  const orderStatusItems = (() => {
+    if (Array.isArray(stats?.orderStatus)) return stats.orderStatus;
+    if (Array.isArray(stats?.orderStatusDetails)) return stats.orderStatusDetails;
+    if (stats?.ordersByStatus && typeof stats.ordersByStatus === 'object') {
+      return Object.entries(stats.ordersByStatus).map(([status, count]) => ({ status, count }));
+    }
+    if (Array.isArray(stats?.overview?.orderStatus)) return stats.overview.orderStatus;
+    return [];
+  })();
+
   const orderStatusData = {
-    labels: stats?.orderStatus?.map((item) => item.status) || ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
+    labels: orderStatusItems.map((item) => item.status),
     datasets: [
       {
-        data: stats?.orderStatus?.map((item) => item.count) || [45, 78, 32, 156, 12],
+        data: orderStatusItems.map((item) => item.count || item.value || 0),
         backgroundColor: ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#C7CEEA'],
         hoverBackgroundColor: ['#FF4757', '#2FBAA0', '#FFC837', '#6CC8D0', '#B39DDB'],
         borderColor: '#fff',
@@ -224,11 +247,11 @@ const Dashboard = () => {
 
   // Top Materials by Stock Value (Bar Graph)
   const stockValueData = {
-    labels: stats?.topMaterials?.map((item) => item.material) || ['Gold 24K', 'Gold 22K', 'Gold 18K', 'Silver 999', 'Platinum', 'Diamond'],
+    labels: stats?.topMaterials?.map((item) => item.material || item.name) || [],
     datasets: [
       {
         label: 'Stock Value',
-        data: stats?.topMaterials?.map((item) => item.value) || [45.2, 32.8, 28.5, 15.3, 12.7, 8.9],
+        data: stats?.topMaterials?.map((item) => item.value || item.stockValue) || [],
         backgroundColor: ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#C7CEEA', '#FF8B94'],
         borderColor: ['#FF4757', '#2FBAA0', '#FFC837', '#6CC8D0', '#B39DDB', '#FF6B7A'],
         borderWidth: 2,
@@ -288,15 +311,8 @@ const Dashboard = () => {
     },
   };
 
-  // Sample data for Recent Orders
-  const recentOrders = stats?.recentOrders || [
-    { orderNumber: "ORD-2024-001", customer: "Rajesh Kumar", material: "Gold 24K", value: "₹2,45,000", status: "Delivered" },
-    { orderNumber: "ORD-2024-002", customer: "Priya Sharma", material: "Gold 22K", value: "₹1,89,000", status: "Processing" },
-    { orderNumber: "ORD-2024-003", customer: "Amit Patel", material: "Silver 999", value: "₹95,000", status: "Shipped" },
-    { orderNumber: "ORD-2024-004", customer: "Sneha Gupta", material: "Gold 18K", value: "₹3,25,000", status: "Pending" },
-    { orderNumber: "ORD-2024-005", customer: "Vikram Singh", material: "Platinum", value: "₹8,75,000", status: "Delivered" },
-    { orderNumber: "ORD-2024-006", customer: "Meera Joshi", material: "Diamond", value: "₹12,50,000", status: "Processing" }
-  ];
+  // Use real recent orders from API
+  const recentOrders = stats?.recentOrders || [];
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -632,27 +648,35 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {stats?.recentOrders?.map((order, index) => (
-                      <tr key={index} className={`hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {order.orderNumber || order.orderId || order._id}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {order.customerName || order.customer?.name || order.userId || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {order.material || order.metal || order.productName || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                          ₹{order.totalAmountINR?.toLocaleString('en-IN') || '0'}
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                            {order.status}
-                          </span>
+                    {recentOrders && recentOrders.length > 0 ? (
+                      recentOrders.map((order, index) => (
+                        <tr key={index} className={`hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                            {order.orderNumber || order.orderId || order._id}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {order.customerName || order.customer?.name || order.userId || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {order.material || order.metal || order.productName || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                            ₹{order.totalAmountINR?.toLocaleString('en-IN') || order.totalPrice?.toLocaleString('en-IN') || '0'}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                              {order.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                          No recent orders found
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>

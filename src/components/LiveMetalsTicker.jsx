@@ -78,7 +78,7 @@ const LiveMetalsTicker = () => {
                 // Fetch live price data
                 const result = await apiService.metals.getLivePrice();
                 console.log('📊 Live metals response:', result);
-                
+
                 // The API response is often nested, e.g., { success: true, data: { data: [...] } }
                 const apiData = result.data?.data || result.data;
 

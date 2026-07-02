@@ -162,7 +162,7 @@ const VendorDashboardContent = () => {
 
             try {
                 // Fetch holdings summary
-                const  holdingResult = await apiService.holdings.getSummary();
+                const holdingResult = await apiService.holdings.getSummary();
                 if (holdingResult.success) {
                     const summaryPayload = holdingResult.data.data || holdingResult.data;
                     setHoldingsSummary(normalizeHoldingsSummary(summaryPayload));
@@ -258,15 +258,28 @@ const VendorDashboardContent = () => {
         .sort((a, b) => new Date(b.orderDate || b.createdAt) - new Date(a.orderDate || a.createdAt))
         .slice(0, 5);
 
-    // Orders by status - normalized to handle API response (capitalized) and dummy data (lowercase)
-    const ordersByStatus = {
-        completed: orders.filter(o => o.status?.toLowerCase() === 'completed' || o.status?.toLowerCase() === 'delivered').length,
-        pending: orders.filter(o => o.status?.toLowerCase() === 'pending').length,
-        processing: orders.filter(o => o.status?.toLowerCase() === 'processing' || o.status?.toLowerCase() === 'shipped').length,
-        cancelled: orders.filter(o => o.status?.toLowerCase() === 'cancelled').length,
+    const getStatusCount = (statusKeys, fallback) => {
+        const normalizedOrders = orders.map(o => (o.status || '').toLowerCase());
+        const count = normalizedOrders.filter(status => statusKeys.includes(status)).length;
+        if (count > 0) return count;
+
+        const summaryCount = ordersSummary?.ordersByStatus;
+        if (!summaryCount) return fallback || 0;
+
+        return statusKeys.reduce((sum, key) => {
+            const keyLower = key.toLowerCase();
+            const summaryValue = summaryCount[key] ?? summaryCount[keyLower] ?? summaryCount[key.toUpperCase()];
+            return sum + (typeof summaryValue === 'number' ? summaryValue : 0);
+        }, 0);
     };
 
-    // Revenue trend (last 7 days) - fixed date comparison
+    const ordersByStatus = {
+        completed: getStatusCount(['completed', 'delivered'], 0),
+        pending: getStatusCount(['pending'], 0),
+        processing: getStatusCount(['processing', 'shipped'], 0),
+        cancelled: getStatusCount(['cancelled'], 0),
+    };
+
     const getRevenueTrend = () => {
         const days = [];
         const now = new Date();
@@ -279,7 +292,10 @@ const VendorDashboardContent = () => {
 
         return days.map(date => {
             const dayOrders = orders.filter(order => {
-                const orderDate = new Date(order.orderDate || order.createdAt);
+                const rawDate = order.orderDate || order.createdAt;
+                if (!rawDate) return false;
+                const orderDate = new Date(rawDate);
+                if (Number.isNaN(orderDate.getTime())) return false;
                 const orderDateStr = orderDate.toISOString().split('T')[0];
                 return orderDateStr === date;
             });
@@ -291,6 +307,17 @@ const VendorDashboardContent = () => {
     };
 
     const revenueTrend = getRevenueTrend();
+
+    const effectiveMetrics = {
+        totalRevenue: metrics.totalRevenue || dashboardMetrics.totalInvested || dashboardMetrics.totalInvestment || ordersSummary?.totalRevenue || 0,
+        totalOrders: metrics.totalOrders || dashboardMetrics.totalOrders || ordersSummary?.totalOrders || 0,
+        totalProducts: metrics.totalProducts || products.length,
+        totalCustomers: metrics.totalCustomers || ordersSummary?.totalCustomers || 0,
+        completedOrders: metrics.completedOrders || ordersByStatus.completed || 0,
+        pendingOrders: metrics.pendingOrders || ordersByStatus.pending || 0,
+        lowStockProducts: metrics.lowStockProducts,
+        avgOrderValue: dashboardMetrics.avgUnitCost || (metrics.totalOrders > 0 ? Math.round(metrics.totalRevenue / metrics.totalOrders) : 0),
+    };
 
     // Chart data
     const statusChartData = {
@@ -364,10 +391,10 @@ const VendorDashboardContent = () => {
                         {/* Overview Cards - Live Data from API */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
                             {[
-                                { title: 'Total Revenue', value: `₹${metrics.totalRevenue.toLocaleString('en-IN')}`, subtitle: 'All time revenue', theme: 'from-sky-500 to-cyan-500', icon: '💰' },
-                                { title: 'Total Orders', value: metrics.totalOrders.toLocaleString('en-IN'), subtitle: 'View order list', theme: 'from-slate-800 to-gray-800', icon: '📦', action: '/orders' },
-                                { title: 'Total Products', value: metrics.totalProducts.toLocaleString('en-IN'), subtitle: 'View holdings inventory', theme: 'from-rose-500 to-pink-500', icon: '📊', action: '/inventory' },
-                                { title: 'Total Customers', value: metrics.totalCustomers.toLocaleString('en-IN'), subtitle: 'Customer base', theme: 'from-emerald-500 to-teal-500', icon: '👥' },
+                                { title: 'Total Revenue', value: `₹${effectiveMetrics.totalRevenue.toLocaleString('en-IN')}`, subtitle: 'All time revenue', theme: 'from-sky-500 to-cyan-500', icon: '💰' },
+                                { title: 'Total Orders', value: effectiveMetrics.totalOrders.toLocaleString('en-IN'), subtitle: 'View order list', theme: 'from-slate-800 to-gray-800', icon: '📦', action: '/orders' },
+                                { title: 'Total Products', value: effectiveMetrics.totalProducts.toLocaleString('en-IN'), subtitle: 'View holdings inventory', theme: 'from-rose-500 to-pink-500', icon: '📊', action: '/inventory' },
+                                { title: 'Total Customers', value: effectiveMetrics.totalCustomers.toLocaleString('en-IN'), subtitle: 'Customer base', theme: 'from-emerald-500 to-teal-500', icon: '👥' },
                             ].map((card) => (
                                 card.action ? (
                                     <button
@@ -401,10 +428,10 @@ const VendorDashboardContent = () => {
                         {/* Performance Metrics */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-8">
                             {[
-                                { title: 'Completed Orders', value: metrics.completedOrders, subtitle: 'Successfully completed', theme: 'from-green-500 to-emerald-500', icon: '✅' },
-                                { title: 'Pending Orders', value: metrics.pendingOrders, subtitle: 'Awaiting processing', theme: 'from-yellow-500 to-amber-500', icon: '⏳' },
-                                { title: 'Low Stock Items', value: metrics.lowStockProducts, subtitle: 'Need restocking', theme: 'from-orange-500 to-red-500', icon: '⚠️' },
-                                { title: 'Avg Order Value', value: `₹${metrics.totalOrders > 0 ? (metrics.totalRevenue / metrics.totalOrders).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '0'}`, subtitle: 'Average per order', theme: 'from-indigo-500 to-purple-500', icon: '📈' },
+                                { title: 'Completed Orders', value: effectiveMetrics.completedOrders, subtitle: 'Successfully completed', theme: 'from-green-500 to-emerald-500', icon: '✅' },
+                                { title: 'Pending Orders', value: effectiveMetrics.pendingOrders, subtitle: 'Awaiting processing', theme: 'from-yellow-500 to-amber-500', icon: '⏳' },
+                                { title: 'Low Stock Items', value: effectiveMetrics.lowStockProducts, subtitle: 'Need restocking', theme: 'from-orange-500 to-red-500', icon: '⚠️' },
+                                { title: 'Avg Order Value', value: `₹${effectiveMetrics.avgOrderValue.toLocaleString('en-IN')}`, subtitle: 'Average per order', theme: 'from-indigo-500 to-purple-500', icon: '📈' },
                             ].map((card) => (
                                 <div
                                     key={card.title}

@@ -255,8 +255,8 @@ const dummyNotifications = {
 
 export const DataProvider = ({ children }) => {
     const { isAuthenticated, user } = useAuth();
-    const [orders, setOrders] = useState(dummyOrders);
-    const [products, setProducts] = useState(dummyProducts);
+    const [orders, setOrders] = useState([]);
+    const [products, setProducts] = useState([]);
     const [vendors, setVendors] = useState(dummyVendors);
     const [holdings, setHoldings] = useState([]);
     const [addresses, setAddresses] = useState([]);
@@ -273,40 +273,57 @@ export const DataProvider = ({ children }) => {
         return dummyNotifications[userRole] || [];
     }, [user]);
 
-    const extractArrayFromResponse = (response) => {
+    const extractArrayFromResponse = (response, visited = new Set()) => {
         if (Array.isArray(response)) return response;
         if (!response || typeof response !== 'object') return [];
-        if (Array.isArray(response.orders)) return response.orders;
-        if (Array.isArray(response.data)) return response.data;
-        if (Array.isArray(response.results)) return response.results;
-        if (Array.isArray(response.payload)) return response.payload;
-        if (Array.isArray(response.items)) return response.items;
+        if (visited.has(response)) return [];
+        visited.add(response);
+
+        const candidateKeys = ['orders', 'items', 'data', 'results', 'payload', 'rows', 'products', 'customers'];
+
+        for (const key of candidateKeys) {
+            const value = response[key];
+            if (Array.isArray(value)) return value;
+        }
+
+        for (const key of Object.keys(response)) {
+            const value = response[key];
+            if (Array.isArray(value)) return value;
+        }
+
+        for (const key of Object.keys(response)) {
+            const nested = response[key];
+            if (nested && typeof nested === 'object') {
+                const nestedArray = extractArrayFromResponse(nested, visited);
+                if (nestedArray.length) return nestedArray;
+            }
+        }
+
         return [];
     };
 
-    // Fetch Orders - using dummy data
+    // Fetch Orders
     const fetchOrders = useCallback(async () => {
         if (!isAuthenticated) {
-            setOrders(dummyOrders);
+            setOrders([]);
             return;
         }
         try {
             setError(null);
             console.log("🔄 Fetching orders from API...");
 
-            const endpoint = '/vendor/orders?page=1&limit=100';
-            const result = await apiService.request(endpoint, 'GET');
+            const result = await apiService.vendor.orders.getAll({ page: 1, limit: 100 });
             console.log('🔎 Orders API response:', result);
 
             if (result.success && result.data) {
                 let apiOrders = extractArrayFromResponse(result.data);
 
-                if (apiOrders.length > 0) {
+                if (Array.isArray(apiOrders)) {
                     setOrders(apiOrders);
                     console.log(`✅ Fetched ${apiOrders.length} orders.`);
                 } else {
                     console.warn("⚠️ Orders data from API is not an array or could not be resolved:", result.data);
-                    setOrders(dummyOrders);
+                    setOrders([]);
                 }
             } else {
                 throw new Error(result.error || 'Failed to fetch orders');
@@ -314,40 +331,32 @@ export const DataProvider = ({ children }) => {
         } catch (err) {
             setError(err.message);
             console.error("🔴 Error fetching orders:", err);
-            setOrders(dummyOrders);
+            setOrders([]);
         }
     }, [isAuthenticated, user]);
 
-    // Fetch Products - using dummy data
+    // Fetch Products
     const fetchProducts = useCallback(async () => {
         if (!isAuthenticated) {
-            setProducts(dummyProducts);
+            setProducts([]);
             return;
         }
         try {
             setError(null);
             console.log("🔄 Fetching products from API...");
 
-            // ✅ Use the products endpoint for product list data
-            const endpoint = '/products?page=1&limit=100&status=ACTIVE';
-
-            const result = await apiService.request(endpoint, 'GET');
+            const result = await apiService.products.getAll({ page: 1, limit: 100, status: 'ACTIVE' });
+            console.log('🔎 Products API response:', result);
 
             if (result.success && result.data) {
-                // ✅ Handle paginated response
-                let apiProducts = result.data.products || result.data.data || result.data;
-
-                // If it's a paginated response object with a 'data' array inside, extract it
-                if (apiProducts && typeof apiProducts === 'object' && !Array.isArray(apiProducts) && apiProducts.data && Array.isArray(apiProducts.data)) {
-                    apiProducts = apiProducts.data;
-                }
+                let apiProducts = extractArrayFromResponse(result.data);
 
                 if (Array.isArray(apiProducts)) {
                     setProducts(apiProducts);
                     console.log(`✅ Fetched ${apiProducts.length} products.`);
                 } else {
                     console.warn("⚠️ Products data from API is not an array:", apiProducts);
-                    setProducts(dummyProducts);
+                    setProducts([]);
                 }
             } else {
                 throw new Error(result.error || 'Failed to fetch products');
@@ -355,92 +364,92 @@ export const DataProvider = ({ children }) => {
         } catch (err) {
             setError(err.message);
             console.error("🔴 Error fetching products:", err);
-            setProducts(dummyProducts);
+            setProducts([]);
         }
     }, [isAuthenticated, user]);
 
-    // Fetch Holdings - using dummy data
+    const isVendorUser = user?.role?.toLowerCase()?.includes('vendor');
+
+    // Fetch Holdings
     const fetchHoldings = useCallback(async () => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || isVendorUser) {
+            setHoldings([]);
+            return;
+        }
         try {
             setError(null);
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 400));
-            setHoldings([
-                {
-                    id: 'hold-1',
-                    metal: 'gold',
-                    quantity: 50,
-                    purity: '24K',
-                    value: 3260000
-                },
-                {
-                    id: 'hold-2',
-                    metal: 'silver',
-                    quantity: 200,
-                    purity: '999',
-                    value: 1760000
-                }
-            ]);
+            const result = await apiService.holdings.getAll();
+            if (result.success && result.data) {
+                const holdingsData = extractArrayFromResponse(result.data);
+                setHoldings(Array.isArray(holdingsData) ? holdingsData : []);
+            } else {
+                throw new Error(result.error || 'Failed to load holdings');
+            }
         } catch (err) {
             setError(err.message);
+            console.error('🔴 Error fetching holdings:', err);
+            setHoldings([]);
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, isVendorUser]);
 
-    // Fetch Addresses - using dummy data
+    // Fetch Addresses
     const fetchAddresses = useCallback(async () => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || isVendorUser) {
+            setAddresses([]);
+            return;
+        }
         try {
             setError(null);
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 300));
-            setAddresses([
-                {
-                    id: 'addr-1',
-                    type: 'home',
-                    name: 'Home Address',
-                    street: '123 Main Street',
-                    city: 'Mumbai',
-                    state: 'Maharashtra',
-                    zipCode: '400001',
-                    country: 'India'
-                }
-            ]);
+            const result = await apiService.delivery.addresses.getAll();
+            if (result.success && result.data) {
+                const addressesData = extractArrayFromResponse(result.data);
+                setAddresses(Array.isArray(addressesData) ? addressesData : []);
+            } else {
+                throw new Error(result.error || 'Failed to load addresses');
+            }
         } catch (err) {
             setError(err.message);
+            console.error('🔴 Error fetching addresses:', err);
+            setAddresses([]);
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, isVendorUser]);
 
-    // Fetch Shipments - using dummy data
+    // Fetch Shipments
     const fetchShipments = useCallback(async () => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || isVendorUser) {
+            setShipments([]);
+            return;
+        }
         try {
             setError(null);
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 400));
-            setShipments([
-                {
-                    id: 'ship-1',
-                    orderId: 'ord-1',
-                    trackingNumber: 'TRK123456789',
-                    status: 'Delivered',
-                    carrier: 'DTDC',
-                    estimatedDelivery: '2024-01-18T10:00:00Z'
-                }
-            ]);
+            const result = await apiService.delivery.shipments.getAll();
+            if (result.success && result.data) {
+                const shipmentsData = extractArrayFromResponse(result.data);
+                setShipments(Array.isArray(shipmentsData) ? shipmentsData : []);
+            } else {
+                throw new Error(result.error || 'Failed to load shipments');
+            }
         } catch (err) {
             setError(err.message);
+            console.error('🔴 Error fetching shipments:', err);
+            setShipments([]);
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, isVendorUser]);
 
-    // Fetch Metal Prices - using dummy data
+    // Fetch Metal Prices
     const fetchMetalPrices = useCallback(async () => {
         try {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 200));
-            setMetalPrices(dummyMetalPrices);
+            setError(null);
+            const result = await apiService.metals.getLivePrice();
+            if (result.success && result.data) {
+                setMetalPrices(result.data);
+            } else {
+                throw new Error(result.error || 'Failed to load metal prices');
+            }
         } catch (err) {
-            console.error('Metal prices error:', err);
+            setError(err.message);
+            console.error('🔴 Error fetching metal prices:', err);
+            setMetalPrices({});
         }
     }, []);
 
@@ -449,25 +458,23 @@ export const DataProvider = ({ children }) => {
         const loadData = async () => {
             setLoading(true);
             setError(null);
-            try {
-                // These now handle auth state internally and will use dummy data if not authenticated.
-                await Promise.all([
-                    fetchProducts(),
-                    fetchOrders(),
-                    fetchMetalPrices(),
-                    fetchHoldings(),
-                    fetchAddresses(),
-                    fetchShipments(),
-                ]);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
+            const tasks = [
+                fetchProducts(),
+                fetchOrders(),
+                fetchMetalPrices(),
+                fetchHoldings(),
+            ];
+
+            if (!isVendorUser) {
+                tasks.push(fetchAddresses(), fetchShipments());
             }
+
+            await Promise.allSettled(tasks);
+            setLoading(false);
         };
 
         loadData();
-    }, [isAuthenticated, user, fetchProducts, fetchOrders, fetchHoldings, fetchAddresses, fetchShipments, fetchMetalPrices]);
+    }, [isAuthenticated, user, isVendorUser, fetchProducts, fetchOrders, fetchHoldings, fetchAddresses, fetchShipments, fetchMetalPrices]);
 
     // Additional helper functions
     const getProductById = (id) => products.find(p => p.id === id);
