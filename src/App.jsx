@@ -1,0 +1,285 @@
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './Contexts/AuthContext.jsx';   // ✅
+import { DataProvider } from './Contexts/DataContext';        // ✅
+import { HeaderProvider } from './Contexts/HeaderContext';    // ✅
+
+// Auth Components
+import Login from './components/Auth/SignIn';
+import ForgotPassword from './components/Auth/ForgotPassword';
+import Register from './screens/Auth/Register';
+import ProtectedRoute from './components/RoleProtectedRoute';
+
+// Vendor Components
+import VendorDashboard from './screens/vendor/Dashboard';
+import WalletPage from './screens/WalletPage';
+import Orders from './screens/Orders';
+import OrdersDetails from './screens/OrdersDetails';
+import BuyGold from './screens/BuyGold';
+import SellGold from './screens/Product/SellGold';
+import Inventory from './screens/Inventory';
+import ProductList from './screens/Product/ProductList';
+import Kyc from './screens/Kyc';
+import Profile from './screens/Profile';
+// import Settings from './screens/Settings';
+import Transactions from './screens/Transactions';
+import Notifications from './screens/Notifications';
+import Reports from './screens/Reports';
+import Customer from './screens/Customer';
+import Vendors from './screens/Vendors';
+import DeliveryManagement from './screens/DeliveryManagement';
+import PurchaseManagement from './screens/PurchaseManagement';
+import GoldPriceDashboard from './screens/GoldPriceDashboard';
+
+// SuperAdmin Components - DISABLED
+// import SuperAdminDashboard from './screens/superadmin/Dashboard';
+// import AllOrders from './screens/superadmin/AllOrders';
+// import AllCustomers from './screens/superadmin/AllCustomers';
+// import KycApprovals from './screens/superadmin/KycApprovals';
+// import SuperAdminReports from './screens/superadmin/Reports';
+// import SuperAdminVendors from './screens/superadmin/Vendors';
+// import MasterData from './screens/superadmin/MasterData';
+// import SuperAdminProfile from './screens/superadmin/Profile';
+// import SuperAdminSettings from './screens/superadmin/Settings';
+
+// Profile Components
+import VendorProfile from './screens/vendor/Profile';
+import VendorSettings from './screens/vendor/Settings';
+
+function App() {
+  return (
+    <HeaderProvider>
+      <AuthProvider>
+        <DataProvider>
+          <Routes>
+            {/* Auth Routes */}
+            {/* <Route path="/" element={<AuthProvider />} /> */}
+            {/* <Route path="/login" element={<Login />} /> */}
+            <Route path="/signin" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* <Route path="/register" element={<Register />} /> */}
+
+            {/* SuperAdmin Routes - DISABLED */}
+            {/* Uncomment below to enable superadmin routes */}
+            {/* 
+            <Route path="/superadmin/dashboard" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><SuperAdminDashboard /></ProtectedRoute>} />
+            <Route path="/superadmin/orders" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><AllOrders /></ProtectedRoute>} />
+            <Route path="/superadmin/all-orders" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><AllOrders /></ProtectedRoute>} />
+            <Route path="/superadmin/customers" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><AllCustomers /></ProtectedRoute>} />
+            <Route path="/superadmin/all-customers" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><AllCustomers /></ProtectedRoute>} />
+            <Route path="/superadmin/kyc" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><KycApprovals /></ProtectedRoute>} />
+            <Route path="/superadmin/kyc-approvals" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><KycApprovals /></ProtectedRoute>} />
+            <Route path="/superadmin/reports" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><SuperAdminReports /></ProtectedRoute>} />
+            <Route path="/superadmin/vendors" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><SuperAdminVendors /></ProtectedRoute>} />
+            <Route path="/superadmin/master-data" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><MasterData /></ProtectedRoute>} />
+            <Route path="/superadmin/profile" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><SuperAdminProfile /></ProtectedRoute>} />
+            <Route path="/superadmin/settings" element={<ProtectedRoute allowedRoles={['superadmin', 'SUPER_ADMIN']}><SuperAdminSettings /></ProtectedRoute>} />
+            */}
+
+            {/* Vendor Routes */}
+            <Route
+              path="/vendor/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['vendor', 'VENDOR', 'vendor_owner']}>
+                  <VendorDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vendor/profile"
+              element={
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER', 'vendor_operations']}>
+                  <VendorProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vendor/settings"
+              element={
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER', 'vendor_operations']}>
+                  <VendorSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/wallet"
+              element={
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER', 'vendor_operations']}>
+                  <WalletPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:id"
+              element={
+                <ProtectedRoute>
+                  <OrdersDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/buy-gold"
+              element={
+                <ProtectedRoute>
+                  <BuyGold />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sell-gold"
+              element={
+                <ProtectedRoute>
+                  <SellGold />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inventory"
+              element={
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER', 'vendor_operations']}>
+                  <Inventory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/product-list"
+              element={
+                <ProtectedRoute>
+                  <ProductList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kyc"
+              element={
+                <ProtectedRoute>
+                  <Kyc />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            {/* <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            /> */}
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute>
+                  <Transactions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customers"
+              element={
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER', 'vendor_operations']}>
+                  <Customer />
+                </ProtectedRoute>
+              }
+            />
+            {/* <Route
+              path="/customer"
+              element={
+                <ProtectedRoute allowedRoles={['VENDOR_OWNER']}>
+                  <Customer />
+                </ProtectedRoute>
+              }
+            /> */}
+            <Route
+              path="/vendors"
+              element={
+                <ProtectedRoute>
+                  <Vendors />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/delivery"
+              element={
+                <ProtectedRoute>
+                  <DeliveryManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/deliveries"
+              element={
+                <ProtectedRoute>
+                  <DeliveryManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchase"
+              element={
+                <ProtectedRoute>
+                  <PurchaseManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/prices"
+              element={
+                <ProtectedRoute>
+                  <GoldPriceDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Dashboard Redirect */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <VendorDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Default Route */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </DataProvider>
+      </AuthProvider>
+    </HeaderProvider>
+  );
+}
+
+export default App;
