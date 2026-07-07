@@ -914,7 +914,7 @@ const WalletPage = () => {
                             </div>
                             <button
                                 onClick={handleDownloadStatement}
-                                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition font-semibold"
+                                className="bg-gradient-to-r from-cyan-500 to-green-400 hover:bg-purple-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition font-semibold"
                             >
                                 <FaDownload />
                                 <span>Download Statement</span>
@@ -936,38 +936,38 @@ const WalletPage = () => {
                         )}
 
                         {/* Balance Card */}
-                        <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-2xl p-8 shadow-xl">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-                                <div>
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="text-lg opacity-90">Total Balance</span>
-                                        <button
-                                            onClick={() => setIsBalanceVisible(!isBalanceVisible)}
-                                            className="text-2xl hover:opacity-80 transition"
-                                        >
-                                            {isBalanceVisible ? <FaEye /> : <FaEyeSlash />}
-                                        </button>
-                                    </div>
-                                    <h2 className="text-5xl font-bold mb-6 tracking-wide">
-                                        {isBalanceVisible ? formatCurrency(walletData.totalBalance) : "••••••••"}
-                                    </h2>
-                                    <button className="bg-white text-purple-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center gap-2">
-                                        <FaPlus />
-                                        Add Money
-                                    </button>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="bg-purple-500 bg-opacity-30 p-4 rounded-lg">
-                                        <p className="text-sm opacity-75">Monthly Earnings</p>
-                                        <p className="text-2xl font-bold">{formatCurrency(walletData.monthlyEarnings)}</p>
-                                    </div>
-                                    <div className="bg-purple-500 bg-opacity-30 p-4 rounded-lg">
-                                        <p className="text-sm opacity-75">Total Transactions</p>
-                                        <p className="text-2xl font-bold">{walletData.totalTransactions}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <div className="bg-gradient-to-r from-slate-900 to-gray-800 text-white rounded-2xl p-8 shadow-xl border border-yellow-600/20">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <span className="text-xl opacity-90">Total Balance</span>
+                <button
+                    onClick={() => setIsBalanceVisible(!isBalanceVisible)}
+                    className="text-2xl hover:opacity-80 transition text-yellow-500"
+                >
+                    {isBalanceVisible ? <FaEye /> : <FaEyeSlash />}
+                </button>
+            </div>
+            <h2 className="text-5xl font-bold mb-6 tracking-wide text-yellow-400">
+                {isBalanceVisible ? formatCurrency(walletData.totalBalance) : "•••••••"}
+            </h2>
+            <button className="bg-yellow-500 text-black px-6 py-2 rounded-lg font-semibold hover:bg-yellow-400 transition flex items-center gap-2">
+                <FaPlus />
+                Add Money
+            </button>
+        </div>
+        <div className="space-y-3">
+            <div className="bg-gradient-to-r from-yellow-600 to-yellow-400 p-4 rounded-lg">
+                <p className="text-sm text-black/70">Monthly Earnings</p>
+                <p className="text-2xl font-bold text-black">{formatCurrency(walletData.monthlyEarnings)}</p>
+            </div>
+            <div className="bg-gradient-to-r from-yellow-600 to-yellow-400 p-4 rounded-lg">
+                <p className="text-sm text-black/70">Total Transactions</p>
+                <p className="text-2xl font-bold text-black">{walletData.totalTransactions}</p>
+            </div>
+        </div>
+    </div>
+</div>
 
                         {/* Balance Breakdown */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
