@@ -99,7 +99,7 @@ const Header = () => {
             {isMenuOpen && (
               <div className="absolute left-0 top-[calc(100%+8px)] w-[220px] bg-white shadow-lg rounded-md z-50 max-h-[70vh] overflow-y-auto">
                 <ul className="text-gray-800 py-2">
-                  {allNavItems.map((item, index) => {
+                  {vendorNavItems.map((item, index) => {
                     const isActive = location.pathname.startsWith(item.path);
                     return (
                       <li

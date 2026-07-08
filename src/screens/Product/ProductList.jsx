@@ -27,12 +27,39 @@ const ProductList = () => {
         status: "DRAFT",
     });
 
-    const placeholderImage = "https://via.placeholder.com/80?text=No+Image";
+    // Inline SVG placeholder — never 404s, never depends on an external service.
+    const placeholderImage =
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(
+            `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">
+                <rect width="80" height="80" fill="#e5e7eb"/>
+                <text x="50%" y="50%" font-family="sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" dominant-baseline="middle">No Image</text>
+            </svg>`
+        );
+
+    // FIX: Vite does not expose process.env in the browser — it uses import.meta.env
+    // with VITE_ prefixed vars instead. If your .env file has REACT_APP_API_BASE_URL,
+    // rename it to VITE_API_BASE_URL (and restart the dev server after editing .env).
+    const MEDIA_BASE_URL =
+        import.meta.env.VITE_MEDIA_BASE_URL ||
+        import.meta.env.VITE_API_BASE_URL ||
+        "https://api.dgi.gold";
+
+    const resolveImageUrl = (url) => {
+        if (!url || typeof url !== "string") return null;
+        const trimmed = url.trim();
+        if (!trimmed) return null;
+        if (/^(https?:)?\/\//i.test(trimmed) || trimmed.startsWith("data:")) {
+            return trimmed;
+        }
+        const path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+        return `${MEDIA_BASE_URL}${path}`;
+    };
 
     const extractImageUrl = (image) => {
         if (!image) return null;
-        if (typeof image === 'string') return image;
-        return (
+        if (typeof image === "string") return resolveImageUrl(image);
+        return resolveImageUrl(
             image?.url ||
             image?.src ||
             image?.fileUrl ||
@@ -72,10 +99,17 @@ const ProductList = () => {
             candidates.push(extractImageUrl(product.imageUrl || product.image || product.thumbnailUrl || product.coverImage || product.picture || product.productImage));
         }
 
-        return candidates.filter((url) => typeof url === 'string' && url.trim().length > 0);
+        return candidates.filter((url) => typeof url === "string" && url.trim().length > 0);
     };
 
     const getProductImageUrl = (product) => getProductImageUrls(product)[0] || placeholderImage;
+
+    const handleImageError = (e, product) => {
+        console.warn("🖼️ Image failed to load for product:", product?.code || product?.id, "→ URL was:", e.target.src);
+        if (e.target.src !== placeholderImage) {
+            e.target.src = placeholderImage;
+        }
+    };
 
     const [selectedFiles, setSelectedFiles] = useState([]);
 
@@ -114,6 +148,16 @@ const ProductList = () => {
                     setGoldProducts([]);
                     setSilverProducts([]);
                     return;
+                }
+
+                if (products[0]) {
+                    console.log("🔍 Sample product raw image fields:", {
+                        images: products[0].images,
+                        imageUrls: products[0].imageUrls,
+                        media: products[0].media,
+                        imageUrl: products[0].imageUrl,
+                        image: products[0].image,
+                    });
                 }
 
                 const goldData = products
@@ -190,9 +234,6 @@ const ProductList = () => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    // ============================================
-    // IMPROVED MEDIA UPLOAD FUNCTION WITH FIXES
-    // ============================================
     const uploadProductMedia = async (productId, selectedFiles) => {
         if (!selectedFiles || selectedFiles.length === 0) {
             console.log('ℹ️ No files to upload');
@@ -202,12 +243,10 @@ const ProductList = () => {
         console.log(`📸 Uploading ${selectedFiles.length} image file(s)...`);
 
         try {
-            // Create FormData with multiple field name attempts
             const mediaForm = new FormData();
 
             selectedFiles.forEach((item, index) => {
                 if (item?.file) {
-                    // Append with different field names for backend compatibility
                     mediaForm.append('media', item.file);
 
                     console.log(`📎 Added image ${index + 1}:`, {
@@ -220,7 +259,6 @@ const ProductList = () => {
 
             console.log('🚀 Sending to endpoint: POST /products/' + productId + '/media');
 
-            // OPTION 1: Try with apiService.products.uploadMedia
             try {
                 const uploadResponse = await apiService.products.uploadMedia(productId, mediaForm);
 
@@ -237,15 +275,13 @@ const ProductList = () => {
             } catch (apiError) {
                 console.warn('⚠️ apiService.uploadMedia failed, trying direct fetch...');
 
-                // OPTION 2: Try direct fetch as fallback
                 const token = localStorage.getItem('authToken');
                 const response = await fetch(
-                    `${process.env.REACT_APP_API_BASE_URL || 'https://api.dgi.gold/api/v1'}/products/${productId}/media`,
+                    `${import.meta.env.VITE_API_BASE_URL || 'https://api.dgi.gold/api/v1'}/products/${productId}/media`,
                     {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`,
-                            // DO NOT set Content-Type - browser will set it with boundary
                         },
                         body: mediaForm
                     }
@@ -273,7 +309,6 @@ const ProductList = () => {
     const handleAddProduct = async (e) => {
         e.preventDefault();
 
-        // FIX #1: Generate unique SKU if code is empty or auto-generate to avoid duplicates
         const skuCode = formData.code?.trim()
             ? formData.code.trim()
             : `${formData.material.toUpperCase()}-${formData.purity}-${Date.now()}`;
@@ -304,7 +339,6 @@ const ProductList = () => {
         try {
             console.log('📝 Creating product with SKU:', skuCode);
 
-            // Step 1: Create product
             const createResponse = await apiService.products.create(newProductPayload);
             if (!createResponse.success) {
                 throw new Error(createResponse.error || 'Failed to add product');
@@ -319,13 +353,11 @@ const ProductList = () => {
 
             console.log('✅ Product created with ID:', productId);
 
-            // Step 2: Upload media if files selected (using improved function)
             if (selectedFiles && selectedFiles.length > 0) {
                 const uploadResult = await uploadProductMedia(productId, selectedFiles);
 
                 if (!uploadResult.success) {
                     console.warn('⚠️ Media upload warning:', uploadResult.error);
-                    // Check if it's a 500 error - likely backend issue
                     if (uploadResult.error.includes('500') || uploadResult.error.includes('Internal Server Error')) {
                         alert('✅ Product added! ⚠️ Note: Image upload failed with server error (500).\n\nPlease contact your backend team to check the media endpoint at POST /products/{id}/media');
                     } else {
@@ -339,10 +371,8 @@ const ProductList = () => {
                 alert('✅ Product added successfully!');
             }
 
-            // Refresh product list
             await fetchProducts();
 
-            // Reset form
             setFormData({
                 code: '',
                 material: 'gold',
@@ -434,14 +464,13 @@ const ProductList = () => {
         <div>
             <div className="flex">
                 <Sidebar />
-                <div className="w-full ml-72 overflow-x-hidden">
+                <div className="w-full ml-0 lg:ml-72 overflow-x-hidden">
                     <div className="sticky top-0 z-30">
                         <Header />
                     </div>
                     <div className="p-6 bg-gray-50 h-[calc(100vh-80px)] overflow-y-auto">
                         <h2 className="text-3xl font-bold text-gray-800 mb-6">Product List</h2>
 
-                        {/* Tabs */}
                         <div className="bg-white rounded-lg shadow-md mb-6">
                             <div className="border-b border-gray-200">
                                 <nav className="flex">
@@ -467,7 +496,6 @@ const ProductList = () => {
                             </div>
                         </div>
 
-                        {/* Products Table */}
                         <div className="bg-white rounded-lg shadow-md overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-200">
                                 <h3 className="text-lg font-semibold text-gray-800">{activeTab === "gold" ? "Gold" : "Silver"} Products</h3>
@@ -497,6 +525,7 @@ const ProductList = () => {
                                                                 src={getProductImageUrl(product)}
                                                                 alt={product.name || product.code}
                                                                 className="h-full w-full object-cover"
+                                                                onError={(e) => handleImageError(e, product)}
                                                             />
                                                         </div>
                                                     </td>
@@ -534,11 +563,15 @@ const ProductList = () => {
                             </div>
                         </div>
 
-                        {/* Add New Product Section */}
                         <div className="bg-white rounded-lg shadow-md mt-6">
                             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                                 <h3 className="text-2xl font-bold text-gray-800">Add New Product</h3>
-                                <button onClick={() => { setShowAddForm(!showAddForm); if (showAddForm) setSelectedFiles([]); }} className={`px-4 py-2 rounded-lg transition ${showAddForm ? "bg-gray-500 text-white hover:bg-gray-600" : "bg-amber-500 text-white hover:bg-amber-600"}`}>{showAddForm ? "Cancel" : "+ Add Product"}</button>
+                                <button onClick={() => 
+                                        { setShowAddForm(!showAddForm); if (showAddForm) setSelectedFiles([]); }} 
+                                        className={`px-4 py-2 rounded-lg transition 
+                                                    ${showAddForm ? "bg-gray-500 text-white hover:bg-red-600" 
+                                                                    : "bg-amber-500 text-white hover:bg-green-600"}`}
+                                                                    >{showAddForm ? "Cancel" : "+ Add Product"}</button>
                             </div>
 
                             {showAddForm && (
@@ -550,7 +583,10 @@ const ProductList = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Material</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Material
+                                                <span className="px-1 text-red-500">*</span>
+                                                </label>
                                             <select name="material" value={formData.material} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" required>
                                                 <option value="gold">Gold</option>
                                                 <option value="silver">Silver</option>
@@ -558,7 +594,10 @@ const ProductList = () => {
                                         </div>
 
                                         <div className="col-span-2">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Product Name
+                                                <span className="px-1 text-red-500">*</span>
+                                                </label>
                                             <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="e.g., 22K Gold Bar - 100g" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" required />
                                         </div>
 
@@ -568,8 +607,31 @@ const ProductList = () => {
                                         </div>
 
                                         <div className="col-span-2">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
-                                            <input type="file" accept="image/*" multiple onChange={handleImageSelection} className="w-full text-sm text-gray-700" />
+                                            <label className="block text-md font-medium text-gray-700 mb-1">
+                                                Product Images
+                                                <span className="px-1 text-red-500">*</span>
+                                            </label>
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                multiple 
+                                                onChange={handleImageSelection} 
+                                                className="hidden"
+                                                id="file-input"
+                                                />
+                                                <label htmlFor="file-input"
+                                                        className="flex items-center gap-3 w-full px-3 py-2.5 border border-gray-300 rounded-lg cursor-pointer hover-border-amber-400 hover:bg-amber-50/50 transition "
+                                                        >
+                                                        <span className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs sm:text-sm font-medium rounded-md border border-gray-300 whitespace-nowrap">
+                                                            Choose Files
+                                                        </span>
+                                                        <span className="text-xs sm:text-sm text-gray-500 truncate">
+                                                            {selectedFiles.length > 0
+                                                                ? `${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`
+                                                                : "No file chosen"}
+                                                        </span>
+                                                        </label>
+
                                             <p className="text-xs text-gray-500 mt-1">💡 Supported formats: JPG, PNG, GIF. Max file size: check your server limits.</p>
                                             {selectedFiles.length > 0 && (
                                                 <div className="mt-3 grid grid-cols-3 gap-3">
@@ -584,7 +646,10 @@ const ProductList = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Purity</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Purity
+                                                <span className="px-1 text-red-500">*</span>
+                                                </label>
                                             <select name="purity" value={formData.purity} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
                                                 {formData.material === "gold" ? (
                                                     <>
@@ -603,33 +668,51 @@ const ProductList = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Weight (grams)</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Weight (in gram/s)
+                                                <span className="px-1 text-red-500">*</span>
+                                                </label>
                                             <input type="number" name="weight" value={formData.weight} onChange={handleInputChange} placeholder="e.g., 100" step="0.01" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" required />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity (units)</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Stock Quantity (units)
+                                                <span className="text-red-500">*</span>
+                                                </label>
                                             <input type="number" name="stock" value={formData.stock} onChange={handleInputChange} placeholder="e.g., 50" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" required />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Base Price (₹)</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Base Price (₹)
+                                                <span className="px-1 text-red-500">*</span>
+                                                </label>
                                             <input type="number" name="price" value={formData.price} onChange={handleInputChange} placeholder="e.g., 65000" step="0.01" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" required />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Markup (%)</label>
-                                            <input type="number" name="markup" value={formData.markup} onChange={handleInputChange} placeholder="e.g., 10" step="0.1" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Markup (%)
+                                                <span className="px-1 text-red-500">*</span>
+                                            </label>
+                                            <input type="number" name="markup" value={formData.markup} onChange={handleInputChange} placeholder="e.g., 10" step="0.1" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" required/>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Making Charges (₹)</label>
-                                            <input type="number" name="makingCharges" value={formData.makingCharges} onChange={handleInputChange} placeholder="e.g., 100" step="0.01" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Making Charges (₹)
+                                                <span className="px-1 text-red-500">*</span>
+                                                </label>
+                                            <input type="number" name="makingCharges" value={formData.makingCharges} onChange={handleInputChange} placeholder="e.g., 100" step="0.01" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" required/>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">GST Percent (%)</label>
-                                            <input type="number" name="gst" value={formData.gst} onChange={handleInputChange} placeholder="e.g., 5" step="0.1" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                GST Percent (%)
+                                                <span className="px-1 text-red-500">*</span>
+                                                </label>
+                                            <input type="number" name="gst" value={formData.gst} onChange={handleInputChange} placeholder="e.g., 5" step="0.1" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" required/>
                                         </div>
 
                                         <div>

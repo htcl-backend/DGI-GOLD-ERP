@@ -239,16 +239,28 @@ const Transactions = () => {
                                 <p className="text-sm text-gray-500">Review pending orders and rejected history without changing the existing orders transaction view.</p>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                {['all', 'pending', 'rejected'].map((filter) => (
-                                    <button
-                                        key={filter}
-                                        onClick={() => setActiveFilter(filter)}
-                                        className={`rounded-full px-4 py-2 text-sm font-medium transition ${activeFilter === filter ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                            }`}>
-                                        {filter === 'all' ? 'All Orders' : filter === 'pending' ? 'Pending' : 'Rejected'}
-                                    </button>
-                                ))}
-                            </div>
+    {['all', 'pending', 'rejected'].map((filter) => (
+        <button
+            key={filter}
+            onClick={() => setActiveFilter(filter)}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                activeFilter === filter
+                    ? filter === 'pending'
+                        ? 'bg-yellow-500 text-white'
+                        : filter === 'rejected'
+                        ? 'bg-red-600 text-white'
+                        : 'bg-blue-600 text-white'
+                    : filter === 'pending'
+                    ? 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                    : filter === 'rejected'
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+        >
+            {filter === 'all' ? 'All Orders' : filter === 'pending' ? 'Pending' : 'Rejected'}
+        </button>
+    ))}
+</div>
                         </div>
 
                         {error && <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-4 text-red-700">{error}</div>}
