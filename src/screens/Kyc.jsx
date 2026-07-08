@@ -760,9 +760,9 @@ const Kyc = () => {
     };
 
     return (
-        <div className="flex min-h-screen">
+        <div className="flex ">
             <Sidebar />
-            <div className="flex-1 ml-72 overflow-x-hidden">
+            <div className="flex-1 ml-0  lg:ml-72 overflow-x-hidden">
                 <Header />
                 <div className="p-4 sm:p-6 lg:p-8 bg-[#f8f4f0] min-h-[calc(100vh-80px)] overflow-y-auto">
                     <div className="max-w-7xl mx-auto">
@@ -794,16 +794,39 @@ const Kyc = () => {
                             </div>
                         </div>
 
-                        <div className="flex gap-2 mb-6">
-                            {['all', 'pending', 'verified', 'rejected'].map((state) => (
-                                <button
-                                    key={state}
-                                    onClick={() => setStatusFilter(state)}
-                                    className={`px-4 py-2 rounded-lg border ${statusFilter === state ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-gray-700 border-gray-300'}`}>
-                                    {state === 'all' ? 'All' : state.charAt(0).toUpperCase() + state.slice(1)}
-                                </button>
-                            ))}
-                        </div>
+                       <div className="flex gap-2 mb-6">
+                            {["all", "pending", "verified", "rejected"].map((state) => (
+                            <button
+                                key={state}
+                                onClick={() => setStatusFilter(state)}
+                                className={`px-4 py-2 rounded-lg border ${
+                                    statusFilter === state
+                                        ? state === "pending"
+                                        ? "bg-yellow-500 text-white"
+                                        : state === "verified"
+                                        ? "bg-green-500 text-white"
+                                        : state === "rejected"
+                                        ? "bg-red-500 text-white"
+                                        : state === "all"
+                                        ? "bg-blue-500 text-white"
+                                        : ""
+                                        : state === "pending"
+                                        ? "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+                                        : state === "verified"
+                                        ? "bg-green-50 text-green-700 hover:bg-green-100"
+                                        : state === "rejected"
+                                        ? "bg-red-50 text-red-700 hover:bg-red-100"
+                                        : state === "all"
+                                        ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                        : ""
+                                }`}
+                            >
+                            {state === "all"
+                                        ? "All"
+                                        : state.charAt(0).toUpperCase() + state.slice(1)}
+                            </button>
+                         ))}
+                    </div>
 
                         <div className="bg-white rounded-lg shadow-md overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-200">
